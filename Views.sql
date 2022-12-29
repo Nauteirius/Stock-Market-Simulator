@@ -1,0 +1,1 @@
+CREATE VIEW temp as select * from [Stock History] where Date = '2022-12-20';
