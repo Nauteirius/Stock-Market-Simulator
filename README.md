@@ -33,3 +33,4 @@ Przydatne linki:
 * https://www.mssqltips.com/sqlservertip/6233/collecting-time-series-data-for-stock-market-with-sql-server/
 * https://github.com/bubuss2/sql-projekt
 * https://www.nirmalbang.com/knowledge-center/stock-market-terminology.html
+* https://github.com/pydata/pandas-datareader/issues/952
