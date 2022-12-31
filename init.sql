@@ -35,7 +35,7 @@ GO
 -- migrate csv file to nvarchar watchlist
 truncate table dbo.yahoo_prices_volumes_for_MSSQLTips_nvarchar
 bulk insert dbo.yahoo_prices_volumes_for_MSSQLTips_nvarchar
-from 'C:\python_programs_output\yahoo_prices_volumes_for_ExchangeSymbols_from_01012009_07102019_aaba_kzia.csv'
+from 'D:\stu\iiis\bd\project\StockMarketSimulator\yahoo_prices_volumes_for_ExchangeSymbols_from_01012022_291222.csv'
 with
 (
     firstrow = 2,
@@ -56,7 +56,7 @@ select
 from dbo.yahoo_prices_volumes_for_MSSQLTips_nvarchar
  
 ---------------------------------------------------------------------------------------------------
- 
+ /*
 -- for second symbol set
  
 -- migrate csv file to nvarchar watchlist
@@ -109,4 +109,4 @@ select
    [Low],
    [Close],
    cast([Volume] as float) 
-from dbo.yahoo_prices_volumes_for_MSSQLTips_nvarchar
+from dbo.yahoo_prices_volumes_for_MSSQLTips_nvarchar */
