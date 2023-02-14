@@ -1,0 +1,9 @@
+- Dodać trigger do UserStocks, który po dokonaniu odjęcia (update ilosci) akcji usunie wiersz jeśli ilość danej akcji spadła do 0 
+- Dodać trigger, który po usnięciu czy update wiersza z SellOrders zaktualizuje stan użytkownika sprzedającego(doda hajs na konto)
+- Dodać trigger, który po usnięciu wiersza z BuyOrders wzroci reszte odpowiedniemu uzykownikowi, ktory to kupowal
+
+- Sprawdzić czy aktualizacja buyOffer zaktualizuje odpowiednie kolumny
+- By móc zagwarantować prawidłowy zwrot albo musimy aktualizować dane i pozostawić trigerrom ich usunięcie albo usuwać przy oddpowiednich przypadkach w Sell ale w pełni za to odpowiadac
+- Ewentualnie zrobic trigerry tylko na usuwanie, przez co odpowiedzialnosc za zwroty spadłaby na nie
+
+-Pamiętać o aktualizacji spentMoney w proceduze sell
