@@ -6,12 +6,13 @@
 5. Symbols
 6. Users
 7. UsersStocks
-8. [ ] BuyOrdersHistory
-9. [ ] SellOrdersHistory
+8. TransactionsHistory
 
 # Triggery:
-1. Oddawanie reszty z zamrożnych pieniędzy na czas operacji kupna
-2. Przelewania pieniędzy za sprzedaż pełną lub częściową
+1. Oddawanie reszty z zamrożonych pieniędzy (StockHistory)
+2. Przelanie pieniędzy za sprzedaż (StockHistory)
+3. Aktualizacja StockHistory wskutek transakcji (StockHistory)
+4. Dodanie akcji na konto kupującego (StockHistory)
 
 # Procedury
 1. Zwiększanie ilości akcji użytkownika
