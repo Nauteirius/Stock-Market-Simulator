@@ -13,6 +13,9 @@
 2. Przelanie pieniędzy za sprzedaż (StockHistory)
 3. Aktualizacja StockHistory wskutek transakcji (StockHistory)
 4. Dodanie akcji na konto kupującego (StockHistory)
+5. [ ] Usun gdy ilość równa 0 (BuyOrders)
+6. [ ] Usuń gdy ilość równa 0 (SellOrders)
+7. [ ] Usuń gdy ilość równa 0 (UserActions)
 
 # Procedury
 1. Zwiększanie ilości akcji użytkownika
@@ -31,7 +34,5 @@
 6. [ ] Wartość portfela użytkownika
 7. [ ] Widok giełdy z konkretnego dnia
 8. [ ] Widok histori konkretnej akcji
-9. [ ] Funkcja sprawdzający czy dany użytkownik posiada daną ilość akcji
-
-# Pomysły bez wiedzy jak zaimplementować
-* [ ] Przekazywanie operacji do histori (niepełna sprzedaż czy niepełne kupno też się liczy)
+9. [x] Funkcja sprawdzający czy dany użytkownik posiada daną ilość akcji
+10. [x] Funkcja sprawdzająca czy dany użytkownik posiada daną kwotę

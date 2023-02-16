@@ -21,6 +21,26 @@ break
 if(@ilosc>0):
 	insert sellorders*/
 
+CREATE FUNCTION hasEnoughStockActions(
+	@userID NVARCHAR(11),
+	@symbol NVARCHAR(4),
+	@amount INT
+)
+RETURNS BIT
+AS
+BEGIN
+	DECLARE @returnBit BIT
+	IF NOT EXISTS (SELECT * FROM UserStocks WHERE UserID=@userID AND Symbol=@symbol)
+		SET @returnBit = 0
+	ELSE IF (SELECT Amount FROM UserStocks WHERE UserID=@userID AND Symbol=@symbol) < @amount
+		SET @returnBit = 0
+	ELSE
+		SET @returnBit = 1
+
+	RETURN @returnBit
+END
+GO
+
 CREATE PROCEDURE sell(
 	@sellerID NVARCHAR(11),
 	@symbol NVARCHAR(4),
@@ -29,16 +49,10 @@ CREATE PROCEDURE sell(
 )
 AS
 BEGIN
-	IF NOT EXISTS (SELECT * FROM UserStocks WHERE UserID=@sellerID AND Symbol=@symbol)
+	IF dbo.hasEnoughStockActions(@sellerID, @symbol, @amount) = 0
 	BEGIN
-		PRINT 'U¿ytkownik ' + @sellerID + ' nie posiada akcji ' + @symbol 
-		BREAK
-	END
-
-	IF (SELECT Amount FROM UserStocks WHERE UserID=@sellerID AND Symbol=@symbol) < @amount
-	BEGIN
-		PRINT 'U¿ytkownik ' + @sellerID + ' posiada mniej akcji ' + @symbol + ' ni¿ ' + CONVERT(VARCHAR, @amount)
-		BREAK
+		PRINT 'U¿ytkownik ' + @sellerID + ' nie posiada wystarczaj¹cej iloœci akcji ' + @symbol 
+		RETURN
 	END
 	ELSE
 	BEGIN
@@ -48,30 +62,41 @@ BEGIN
 	END
 
 	DECLARE @buyID INT
+	DECLARE @buyerID NVARCHAR(11)
 	DECLARE @amountInBuy INT
+	DECLARE @buyerMaxPrice MONEY
 
 	DECLARE matchingBuyOrders CURSOR FOR
-	SELECT OrderID, Amount FROM BuyOrders 
+	SELECT OrderID, BuyerID, Amount, MaxPrice FROM BuyOrders 
 	WHERE Symbol=@symbol AND @sellPrice <= MaxPrice
 
 	OPEN matchingBuyOrders
 
-	FETCH NEXT FROM matchingBuyOrders INTO @buyID, @amountInBuy
+	FETCH NEXT FROM matchingBuyOrders INTO @buyID, @buyerID, @amountInBuy, @buyerMaxPrice
 
 	WHILE @@FETCH_STATUS = 0 AND @amount != 0
 	BEGIN
 		IF @amount > @amountInBuy
 		BEGIN
+			INSERT INTO TransactionsHistory
+			VALUES (GETDATE(), @sellerID, @buyerID, @symbol, @amountInBuy, @sellPrice, @buyerMaxPrice)
+
 			SET @amount = @amount - @amountInBuy
 			SET @amountInBuy = 0
 		END
 		ELSE IF @amount < @amountInBuy
 		BEGIN
+			INSERT INTO TransactionsHistory
+			VALUES (GETDATE(), @sellerID, @buyerID, @symbol, @amount, @sellPrice, @buyerMaxPrice)
+
 			SET @amountInBuy = @amountInBuy - @amount
 			SET @amount = 0
 		END
 		ELSE
 		BEGIN
+			INSERT INTO TransactionsHistory
+			VALUES (GETDATE(), @sellerID, @buyerID, @symbol, @amount, @sellPrice, @buyerMaxPrice)
+			
 			SET @amount = 0
 			SET @amountInBuy = 0
 		END
@@ -80,7 +105,7 @@ BEGIN
 		SET Amount = @amountInBuy
 		WHERE OrderID = @buyID
 
-		FETCH NEXT FROM matchingBuyOrders INTO @buyID, @amountInBuy
+		FETCH NEXT FROM matchingBuyOrders INTO @buyID, @buyerID, @amountInBuy, @buyerMaxPrice
 	END
 	
 	CLOSE matchingBuyOrders

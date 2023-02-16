@@ -73,56 +73,66 @@ CREATE TABLE StockHistory(
 )
 GO
 
---TWORZENIE TRIGGERÓW
+IF OBJECT_ID('TransactionsHistory') IS NOT NULL
+	DROP TABLE TransactionsHistory
 
-IF OBJECT_ID('transferRestOfDepositedMoneyAfterFullBuy') IS NOT NULL
-	DROP TRIGGER transferRestOfDepositedMoneyAfterFullBuy
+CREATE TABLE TransactionsHistory(
+	TransactionID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	[Date] DATE NOT NULL,
+	SellerID NVARCHAR(11) NOT NULL,
+	BuyerID NVARCHAR(11) NOT NULL,
+	Symbol NVARCHAR(4) NOT NULL,
+	Amount INT NOT NULL,
+	SellPrice MONEY NOT NULL,
+	BuyerMaxPrice MONEY NOT NULL
+)
 GO
 
-CREATE TRIGGER transferRestOfDepositedMoneyAfterFullBuy
-ON BuyOrders
-FOR UPDATE
+--Funkcje
+
+IF OBJECT_ID('hasEnoughMoney') IS NOT NULL
+	DROP FUNCTION hasEnoughMoney
+GO
+
+CREATE FUNCTION hasEnoughMoney(
+	@userID NVARCHAR(11),
+	@money MONEY
+)
+RETURNS BIT
 AS
 BEGIN
-	DECLARE @newAmount INT, @moneySpent MONEY, @moneyDeposited MONEY, @buyerID NVARCHAR(11), @buyID INT
-	SELECT @newAmount = Amount, @moneySpent = MoneySpent, @moneyDeposited = TotalDeposit, @buyerID = BuyerID, @buyID = OrderID FROM inserted
+	DECLARE @returnBit BIT
 
-	IF @newAmount = 0
-	BEGIN
-		UPDATE Users
-		SET Balance = Balance + (@moneyDeposited - @moneySpent)
-		WHERE UserID = @buyerID
+	IF @money > (select Balance from Users where UserId=@userID)
+		SET @returnBit = 0
+	ELSE
+		SET @returnBit = 1
 
-		DELETE BuyOrders
-		WHERE OrderID = @buyID
-	END
+	RETURN @returnBit
 END
 GO
 
-IF OBJECT_ID('transferMoneyAfterSaleAndDeleteEmptyOffers') IS NOT NULL
-	DROP TRIGGER transferMoneyAfterSaleAndDeleteEmptyOffers
+IF OBJECT_ID('hasEnoughStockActions') IS NOT NULL
+	DROP FUNCTION hasEnoughStockActions
 GO
 
-CREATE TRIGGER transferMoneyAfterSaleAndDeleteEmptyOffers
-ON SellOrders
-FOR UPDATE
+CREATE FUNCTION hasEnoughStockActions(
+	@userID NVARCHAR(11),
+	@symbol NVARCHAR(4),
+	@amount INT
+)
+RETURNS BIT
 AS
 BEGIN
-	DECLARE @OldAmount INT, @NewAmount INT, @sellerID NVARCHAR(11), @price MONEY, @sellID INT
+	DECLARE @returnBit BIT
+	IF NOT EXISTS (SELECT * FROM UserStocks WHERE UserID=@userID AND Symbol=@symbol)
+		SET @returnBit = 0
+	ELSE IF (SELECT Amount FROM UserStocks WHERE UserID=@userID AND Symbol=@symbol) < @amount
+		SET @returnBit = 0
+	ELSE
+		SET @returnBit = 1
 
-    SELECT @OldAmount = Amount FROM deleted
-    SELECT @NewAmount = Amount FROM inserted
-	SELECT @price = Price FROM inserted
-	SELECT @sellerID = SellerID FROM inserted
-	SELECT @sellID = OrderID FROM inserted
-
-	UPDATE Users
-	SET Balance = Balance + ((@OldAmount-@NewAmount) * @price)
-	WHERE UserID = @sellerID
-
-	IF @NewAmount = 0
-		DELETE SellOrders
-		WHERE OrderID = @sellID
+	RETURN @returnBit
 END
 GO
 
@@ -181,77 +191,87 @@ END
 GO
 
 IF OBJECT_ID('Buy') IS NOT NULL
-	drop procedure Buy
+	DROP PROCEDURE Buy
 GO
 
-Create procedure Buy
-(
-	@buyerid nvarchar(11),
-	@symbol nvarchar(4),
-	@amount int,
-	@max_price money
+CREATE PROCEDURE Buy(
+	@buyerID NVARCHAR(11),
+	@symbol NVARCHAR(4),
+	@amount INT,
+	@maxPrice MONEY
 )
-as
-begin
-	if @max_price * @amount > (select Balance from Users where UserId=@buyerid)
-	begin
-		print('nie da sie')
-		return
-	end
-	declare @money_spent money
-	set @money_spent = 0 
-	declare @frozen money
-	set @frozen = @max_price * @amount
+AS
+BEGIN
+	DECLARE @moneyToDeposit MONEY
+	SET @moneyToDeposit = @amount * @maxPrice
 
-	update Users
-	set Balance = Balance - @frozen
-	where UserID = @buyerid
+	IF dbo.hasEnoughMoney(@buyerID, @moneyToDeposit) = 0
+	BEGIN
+		PRINT 'U¿ytkownik ' + @buyerID + ' nie posiada wystarczaj¹cej iloœci pieniêdzy by wykonaæ kupno przy tych danych'
+		RETURN
+	END
 
-	DECLARE @amountInSell INT
-	DECLARE @priceInSell MONEY
+	UPDATE Users
+	SET Balance = Balance - @moneyToDeposit
+	WHERE UserID = @buyerID
+
 	DECLARE @sellID INT
+	DECLARE @sellerID NVARCHAR(11)
+	DECLARE @amountInSell INT
+	DECLARE @sellPrice MONEY
 
-	while 0<1
-	begin
-		if (select count(*) from sellOrders where Symbol=@symbol and Price<=@max_price) = 0
-		begin
-			insert into BuyOrders(BuyerID, Symbol, Amount, MoneySpent, TotalDeposit)
-			values (@buyerid, @symbol, @amount, @money_spent, @frozen)
-			break
-		end
+	DECLARE matchingSellOrders CURSOR FOR
+	SELECT OrderID, SellerID, Amount, Price FROM SellOrders 
+	WHERE Symbol=@symbol AND Price <= @maxPrice
+	ORDER BY Price DESC
 
-		SELECT @sellID=OrderID, @amountInSell=Amount, @priceInSell=Price FROM SellOrders WHERE Symbol=@symbol and Price<=@max_price
+	OPEN matchingSellOrders
 
-		if @amount > (select top 1 Amount from sellOrders where Symbol=@symbol and Price<=@max_price order by Price ASC)
-		begin
-			set @amount = @amount - (select top 1 Amount from sellOrders where Symbol=@symbol and Price<=@max_price order by Price ASC)
-			set @money_spent = @money_spent + (select top 1 Price from sellOrders where Symbol=@symbol and Price<=@max_price order by Price ASC) * (select top 1 Amount from sellOrders where Symbol=@symbol and Price<=@max_price order by Price ASC)
+	FETCH NEXT FROM matchingSellOrders INTO @sellID, @sellerID, @amountInSell, @sellPrice
+
+	WHILE @@FETCH_STATUS = 0 AND @amount != 0
+	BEGIN
+		IF @amount > @amountInSell
+		BEGIN
+			INSERT INTO TransactionsHistory
+			VALUES (GETDATE(), @sellerID, @buyerID, @symbol, @amountInSell, @sellPrice, @maxPrice)
+
+			SET @amount = @amount - @amountInSell
+			SET @amountInSell = 0
+		END
+		ELSE IF @amount < @amountInSell
+		BEGIN
+			INSERT INTO TransactionsHistory
+			VALUES (GETDATE(), @sellerID, @buyerID, @symbol, @amount, @sellPrice, @maxPrice)
+
+			SET @amountInSell = @amountInSell - @amount
+			SET @amount = 0
+		END
+		ELSE
+		BEGIN
+			INSERT INTO TransactionsHistory
+			VALUES (GETDATE(), @sellerID, @buyerID, @symbol, @amount, @sellPrice, @maxPrice)
 			
-			EXECUTE dbo.addStocksToUser @buyerid, @symbol, @amountInSell
+			SET @amount = 0
+			SET @amountInSell = 0
+		END
 
-			delete from SellOrders where OrderID = (select top 1 OrderID from sellOrders where Symbol=@symbol and Price<=@max_price order by Price ASC)	
-		end
-		else if @amount < (select top 1 Amount from sellOrders where Symbol=@symbol and Price<=@max_price order by Price ASC)
-		begin
-			EXECUTE dbo.addStocksToUser @buyerid, @symbol, @amount
+		UPDATE SellOrders
+		SET Amount = @amountInSell
+		WHERE OrderID = @sellID
 
-			update SellOrders
-			set Amount = Amount - @amount
-			where OrderID = (select top 1 OrderID from sellOrders where Symbol=@symbol and Price<=@max_price order by Price ASC)
+		FETCH NEXT FROM matchingSellOrders INTO @sellID, @sellerID, @amountInSell, @sellPrice
+	END
+	
+	CLOSE matchingSellOrders
+	DEALLOCATE matchingSellOrders
 
-			set @money_spent = @money_spent + (select top 1 Price from sellOrders where Symbol=@symbol and Price<=@max_price order by Price ASC) * (select top 1 Amount from sellOrders where Symbol=@symbol and Price<=@max_price order by Price ASC)
-			break
-		end
-		else
-		begin
-			EXECUTE dbo.addStocksToUser @buyerid, @symbol, @amount
-
-			delete from SellOrders where OrderID = (select top 1 OrderID from sellOrders where Symbol=@symbol and Price<=@max_price order by Price ASC)
-			set @money_spent = @money_spent + (select top 1 Price from sellOrders where Symbol=@symbol and Price<=@max_price order by Price ASC) * (select top 1 Amount from sellOrders where Symbol=@symbol and Price<=@max_price order by Price ASC)
-			break
-		end
-	end
-end
+	IF @amount != 0
+	BEGIN
+		INSERT INTO BuyOrders
+		VALUES (@buyerID, @symbol, @amount, 0, 0, @maxPrice)
+	END
+END
 GO
 
 IF OBJECT_ID('sell') IS NOT NULL
@@ -266,16 +286,10 @@ CREATE PROCEDURE sell(
 )
 AS
 BEGIN
-	IF NOT EXISTS (SELECT * FROM UserStocks WHERE UserID=@sellerID AND Symbol=@symbol)
+	IF dbo.hasEnoughStockActions(@sellerID, @symbol, @amount) = 0
 	BEGIN
-		PRINT 'U¿ytkownik ' + @sellerID + ' nie posiada akcji ' + @symbol 
-		BREAK
-	END
-
-	IF (SELECT Amount FROM UserStocks WHERE UserID=@sellerID AND Symbol=@symbol) < @amount
-	BEGIN
-		PRINT 'U¿ytkownik ' + @sellerID + ' posiada mniej akcji ' + @symbol + ' ni¿ ' + CONVERT(VARCHAR, @amount)
-		BREAK
+		PRINT 'U¿ytkownik ' + @sellerID + ' nie posiada wystarczaj¹cej iloœci akcji ' + @symbol 
+		RETURN
 	END
 	ELSE
 	BEGIN
@@ -285,30 +299,41 @@ BEGIN
 	END
 
 	DECLARE @buyID INT
+	DECLARE @buyerID NVARCHAR(11)
 	DECLARE @amountInBuy INT
+	DECLARE @buyerMaxPrice MONEY
 
 	DECLARE matchingBuyOrders CURSOR FOR
-	SELECT OrderID, Amount FROM BuyOrders 
+	SELECT OrderID, BuyerID, Amount, MaxPrice FROM BuyOrders 
 	WHERE Symbol=@symbol AND @sellPrice <= MaxPrice
 
 	OPEN matchingBuyOrders
 
-	FETCH NEXT FROM matchingBuyOrders INTO @buyID, @amountInBuy
+	FETCH NEXT FROM matchingBuyOrders INTO @buyID, @buyerID, @amountInBuy, @buyerMaxPrice
 
 	WHILE @@FETCH_STATUS = 0 AND @amount != 0
 	BEGIN
 		IF @amount > @amountInBuy
 		BEGIN
+			INSERT INTO TransactionsHistory
+			VALUES (GETDATE(), @sellerID, @buyerID, @symbol, @amountInBuy, @sellPrice, @buyerMaxPrice)
+
 			SET @amount = @amount - @amountInBuy
 			SET @amountInBuy = 0
 		END
 		ELSE IF @amount < @amountInBuy
 		BEGIN
+			INSERT INTO TransactionsHistory
+			VALUES (GETDATE(), @sellerID, @buyerID, @symbol, @amount, @sellPrice, @buyerMaxPrice)
+
 			SET @amountInBuy = @amountInBuy - @amount
 			SET @amount = 0
 		END
 		ELSE
 		BEGIN
+			INSERT INTO TransactionsHistory
+			VALUES (GETDATE(), @sellerID, @buyerID, @symbol, @amount, @sellPrice, @buyerMaxPrice)
+			
 			SET @amount = 0
 			SET @amountInBuy = 0
 		END
@@ -317,7 +342,7 @@ BEGIN
 		SET Amount = @amountInBuy
 		WHERE OrderID = @buyID
 
-		FETCH NEXT FROM matchingBuyOrders INTO @buyID, @amountInBuy
+		FETCH NEXT FROM matchingBuyOrders INTO @buyID, @buyerID, @amountInBuy, @buyerMaxPrice
 	END
 	
 	CLOSE matchingBuyOrders
@@ -328,5 +353,104 @@ BEGIN
 		INSERT INTO SellOrders
 		VALUES (@sellerID, @symbol, @amount, @sellPrice)
 	END
+END
+GO
+
+--TWORZENIE TRIGGERÓW
+
+IF OBJECT_ID('ReturnRestFromDepositedMoney') IS NOT NULL
+	DROP TRIGGER ReturnRestFromDepositedMoney
+GO
+
+CREATE TRIGGER ReturnRestFromDepositedMoney
+ON TransactionsHistory
+AFTER INSERT
+AS
+BEGIN
+	DECLARE @buyerID NVARCHAR(11), @amount INT, @sellPrice MONEY, @buyerMaxPrice MONEY
+
+	SELECT @buyerID = BuyerID, @amount = Amount,
+		@sellPrice = SellPrice, @buyerMaxPrice = BuyerMaxPrice
+	FROM inserted
+
+	UPDATE Users
+	SET Balance = Balance + (@amount * (@buyerMaxPrice-@sellPrice))
+	WHERE UserID = @buyerID
+END
+GO
+
+IF OBJECT_ID('TransferSaleMoney') IS NOT NULL
+	DROP TRIGGER TransferSaleMoney
+GO
+
+CREATE TRIGGER TransferSaleMoney
+ON TransactionsHistory
+AFTER INSERT
+AS
+BEGIN
+	DECLARE @sellerID NVARCHAR(11), @amount INT, @sellPrice MONEY
+
+	SELECT @sellerID = SellerID, @amount = Amount, @sellPrice = SellPrice
+	FROM inserted
+
+	UPDATE Users
+	SET Balance = Balance + (@amount * @sellPrice)
+	WHERE UserID = @sellerID
+END
+GO
+
+IF OBJECT_ID('UpdateStockHistory') IS NOT NULL
+	DROP TRIGGER UpdateStockHistory
+GO
+
+CREATE TRIGGER UpdateStockHistory
+ON TransactionsHistory
+AFTER INSERT
+AS
+BEGIN
+	DECLARE @date DATE, @symbol NVARCHAR(4), @sellPrice MONEY
+
+	SELECT @date = [Date], @symbol = Symbol, @sellPrice = SellPrice FROM inserted
+
+	IF EXISTS( SELECT * FROM StockHistory WHERE [Date] = @date AND Symbol = @symbol )
+	BEGIN
+		DECLARE @low MONEY, @high MONEY
+
+		SELECT @low = [Low], @high = [High] FROM StockHistory
+		WHERE [Date] = @date AND Symbol = @symbol
+		
+		IF @low > @sellPrice
+			SET @low = @sellPrice
+
+		IF @high < @sellPrice
+			SET @high = @sellPrice
+
+		UPDATE StockHistory
+		SET [Low] = @low, [High] = @high
+		WHERE [Date] = @date AND Symbol = @symbol
+	END
+	ELSE
+	BEGIN
+		INSERT INTO StockHistory
+		VALUES (@date, @symbol, @sellPrice, @sellPrice, @sellPrice, @sellPrice, 0)
+	END
+END
+GO
+
+IF OBJECT_ID('TransferSymbols') IS NOT NULL
+	DROP TRIGGER TransferSymbols
+GO
+
+CREATE TRIGGER TransferSymbols
+ON TransactionsHistory
+AFTER INSERT
+AS
+BEGIN
+	DECLARE @buyerID NVARCHAR(11), @symbol NVARCHAR(4), @amount INT
+
+	SELECT @buyerID = BuyerID, @symbol = Symbol, @amount = Amount
+	FROM inserted
+
+	EXECUTE dbo.addStocksToUser @buyerID, @symbol, @amount
 END
 GO
