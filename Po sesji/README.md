@@ -23,16 +23,24 @@
 3. Sprzedaż akcji
 4. Kupno akcji
 5. [ ] Rejestracja
-6. [ ] Wplacanie pieniedzy na konto 
+6. [x] Wplacanie pieniedzy na konto 
 
 # Funkcje i Widoki
 1. [ ] Czytanie daty urodzenia
 2. [ ] Czytanie płci
 3. [ ] Sprawdzanie czy pesel poprawny
-4. [ ] Pokazanie akcji konkretnego użytkownika
+4. [x] Pokazanie akcji konkretnego użytkownika
 5. [ ] Wyznaczanie prawdopodobnej kwoty danej akcji
 6. [ ] Wartość portfela użytkownika
-7. [ ] Widok giełdy z konkretnego dnia
-8. [ ] Widok histori konkretnej akcji
+7. [x] Widok giełdy z konkretnego dnia
+8. [x] Widok histori konkretnej akcji
 9. [x] Funkcja sprawdzający czy dany użytkownik posiada daną ilość akcji
 10. [x] Funkcja sprawdzająca czy dany użytkownik posiada daną kwotę
+11. [x] Czy użytkownik istnieje
+
+# Co przenieść do całości
+[ ] Pokazanie akcji konkretnego użytkownika
+[ ] Widok giełdy z konkretnego dnia
+[ ] Widok histori konkretnej akcji
+[ ] Wplacanie pieniedzy na konto
+[ ] Czy użytkownik istnieje
