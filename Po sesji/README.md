@@ -22,13 +22,13 @@
 2. Zmniejszanie ilości akcji użytkownika
 3. Sprzedaż akcji
 4. Kupno akcji
-5. [ ] Rejestracja
+5. [x] Rejestracja
 6. [x] Wplacanie pieniedzy na konto 
 
 # Funkcje i Widoki
-1. [ ] Czytanie daty urodzenia
-2. [ ] Czytanie płci
-3. [ ] Sprawdzanie czy pesel poprawny
+1. [x] Czytanie daty urodzenia
+2. [x] Czytanie płci
+3. [x] Sprawdzanie czy pesel poprawny
 4. [x] Pokazanie akcji konkretnego użytkownika
 5. [ ] Wyznaczanie prawdopodobnej kwoty danej akcji
 6. [ ] Wartość portfela użytkownika
@@ -37,10 +37,15 @@
 9. [x] Funkcja sprawdzający czy dany użytkownik posiada daną ilość akcji
 10. [x] Funkcja sprawdzająca czy dany użytkownik posiada daną kwotę
 11. [x] Czy użytkownik istnieje
+12. [x] Sprawdzanie czy hasło spełnia dane warunki
 
 # Co przenieść do całości
-[ ] Pokazanie akcji konkretnego użytkownika
-[ ] Widok giełdy z konkretnego dnia
-[ ] Widok histori konkretnej akcji
-[ ] Wplacanie pieniedzy na konto
-[ ] Czy użytkownik istnieje
+* [ ] Pokazanie akcji konkretnego użytkownika
+* [ ] Widok giełdy z konkretnego dnia
+* [ ] Widok histori konkretnej akcji
+* [ ] Wplacanie pieniedzy na konto
+* [ ] Czy użytkownik istnieje
+* [ ] Rejestracja
+* [ ] Czytanie daty urodzenia
+* [ ] Czytanie płci
+* [ ] Sprawdzanie czy pesel poprawny
