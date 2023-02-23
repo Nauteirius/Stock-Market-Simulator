@@ -384,10 +384,10 @@ BEGIN
 			WHERE UserID=@userID AND Symbol=@symbol
 		END
 		ELSE
-			PRINT 'Podany u¿ytkownik o ID: ' + @userID + ' posiada mniej akcji ' + @symbol + ' ni¿ ' + CONVERT(VARCHAR, @amount)
+			PRINT 'Podany uï¿½ytkownik o ID: ' + @userID + ' posiada mniej akcji ' + @symbol + ' niï¿½ ' + CONVERT(VARCHAR, @amount)
 	END
 	ELSE
-		PRINT 'Podany u¿ytkownik o ID: ' + @userID + ' nie posiada akcji ' + @symbol 
+		PRINT 'Podany uï¿½ytkownik o ID: ' + @userID + ' nie posiada akcji ' + @symbol 
 END
 GO
 
@@ -409,7 +409,7 @@ BEGIN
 
 	IF dbo.hasEnoughMoney(@buyerID, @moneyToDeposit) = 0
 	BEGIN
-		PRINT 'U¿ytkownik ' + @buyerID + ' nie posiada wystarczaj¹cej iloœci pieniêdzy by wykonaæ kupno przy tych danych'
+		PRINT 'Uï¿½ytkownik ' + @buyerID + ' nie posiada wystarczajï¿½cej iloï¿½ci pieniï¿½dzy by wykonaï¿½ kupno przy tych danych'
 		RETURN
 	END
 
@@ -491,7 +491,7 @@ AS
 BEGIN
 	IF dbo.hasEnoughStockActions(@sellerID, @symbol, @amount) = 0
 	BEGIN
-		PRINT 'U¿ytkownik ' + @sellerID + ' nie posiada wystarczaj¹cej iloœci akcji ' + @symbol 
+		PRINT 'Uï¿½ytkownik ' + @sellerID + ' nie posiada wystarczajï¿½cej iloï¿½ci akcji ' + @symbol 
 		RETURN
 	END
 	ELSE
@@ -571,7 +571,7 @@ CREATE PROCEDURE DepositMoney(
 AS
 BEGIN
 	IF dbo.HasUser(@userID) = 0
-		PRINT 'Nie istnieje taki u¿ytkownik'
+		PRINT 'Nie istnieje taki uï¿½ytkownik'
 	ELSE
 	BEGIN
 		UPDATE Users
@@ -618,11 +618,11 @@ BEGIN
 		DELETE FROM RegisteredUsers
 		WHERE UserID = @pesel
 	ELSE
-		PRINT 'Podany u¿ytkownik nie jest zarejestrowany wiêc nie mogê go usun¹æ'
+		PRINT 'Podany uï¿½ytkownik nie jest zarejestrowany wiï¿½c nie mogï¿½ go usunï¿½ï¿½'
 END
 GO
 
---TWORZENIE TRIGGERÓW
+--TWORZENIE TRIGGERï¿½W
 
 --1
 IF OBJECT_ID('ReturnRestFromDepositedMoney') IS NOT NULL

@@ -46,3 +46,4 @@
 * [ ] Zmienić kolejność drop table by relacje kluczy obcych nie powodowaly bledow
 * [ ] Dokumentacja 
 * [ ] Usunąć open i close
+* [ ] Usunąć totalDeposit oraz moneyspent. Tą rolę spełnia transactionHistory
