@@ -43,5 +43,6 @@
 12. [ ] Wartość portfela użytkownika
 
 # Co przenieść do całości
-* [ ] Dodanie referencji
+* [ ] Zmienić kolejność drop table by relacje kluczy obcych nie powodowaly bledow
 * [ ] Dokumentacja 
+* [ ] Usunąć open i close
