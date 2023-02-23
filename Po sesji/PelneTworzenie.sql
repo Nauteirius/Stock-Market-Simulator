@@ -1,30 +1,4 @@
 --1
-IF OBJECT_ID('BuyOrders') IS NOT NULL
-	DROP TABLE BuyOrders
-
-CREATE TABLE BuyOrders(
-	OrderID INT IDENTITY(1, 1) PRIMARY KEY,
-	BuyerID NVARCHAR(11),
-	Symbol NVARCHAR(4),
-	Amount INT,
-	MoneySpent MONEY,
-	TotalDeposit MONEY,
-	MaxPrice MONEY
-)
-
---2
-IF OBJECT_ID('SellOrders') IS NOT NULL
-	DROP TABLE SellOrders
-
-CREATE TABLE SellOrders(
-	OrderID INT IDENTITY(1, 1) PRIMARY KEY,
-	SellerID NVARCHAR(11),
-	Symbol NVARCHAR(4),
-	Amount INT,
-	Price MONEY
-)
-
---3
 IF OBJECT_ID('Users') IS NOT NULL
 	DROP TABLE Users
 
@@ -35,43 +9,69 @@ CREATE TABLE Users(
 	BirthDay DATE
 )
 
---4
-IF OBJECT_ID('RegisteredUsers') IS NOT NULL
-	DROP TABLE RegisteredUsers
-
-CREATE TABLE RegisteredUsers(
-	UserID NVARCHAR(11),
-	Password NVARCHAR(MAX)
-)
-GO
-
---5
-IF OBJECT_ID('DeletedUsers') IS NOT NULL
-	DROP TABLE DeletedUsers
-
-CREATE TABLE DeletedUsers(
-	UserID NVARCHAR(11),
-	DeletionDate DATE
-)
-GO
-
---6
-IF OBJECT_ID('UserStocks') IS NOT NULL
-	DROP TABLE UserStocks
-
-CREATE TABLE UserStocks(
-	UserID NVARCHAR(11),
-	Symbol NVARCHAR(4),
-	Amount INT,
-	PRIMARY KEY(UserID, Symbol)
-)
-
---7
+--2
 IF OBJECT_ID('Symbols') IS NOT NULL
 	DROP TABLE Symbols
 
 CREATE TABLE Symbols(
 	Symbol NVARCHAR(4) PRIMARY KEY,
+)
+
+--3
+IF OBJECT_ID('BuyOrders') IS NOT NULL
+	DROP TABLE BuyOrders
+
+CREATE TABLE BuyOrders(
+	OrderID INT IDENTITY(1, 1) PRIMARY KEY,
+	BuyerID NVARCHAR(11) FOREIGN KEY REFERENCES Users(UserID),
+	Symbol NVARCHAR(4) FOREIGN KEY REFERENCES Symbols(Symbol),
+	Amount INT,
+	MoneySpent MONEY,
+	TotalDeposit MONEY,
+	MaxPrice MONEY
+)
+
+--4
+IF OBJECT_ID('SellOrders') IS NOT NULL
+	DROP TABLE SellOrders
+
+CREATE TABLE SellOrders(
+	OrderID INT IDENTITY(1, 1) PRIMARY KEY,
+	SellerID NVARCHAR(11) FOREIGN KEY REFERENCES Users(UserID),
+	Symbol NVARCHAR(4) FOREIGN KEY REFERENCES Symbols(Symbol),
+	Amount INT,
+	Price MONEY
+)
+
+--5
+IF OBJECT_ID('RegisteredUsers') IS NOT NULL
+	DROP TABLE RegisteredUsers
+
+CREATE TABLE RegisteredUsers(
+	UserID NVARCHAR(11) PRIMARY KEY FOREIGN KEY REFERENCES Users(UserID),
+	Password NVARCHAR(MAX)
+)
+GO
+
+--6
+IF OBJECT_ID('DeletedUsers') IS NOT NULL
+	DROP TABLE DeletedUsers
+
+CREATE TABLE DeletedUsers(
+	UserID NVARCHAR(11) PRIMARY KEY FOREIGN KEY REFERENCES Users(UserID),
+	DeletionDate DATE
+)
+GO
+
+--7
+IF OBJECT_ID('UserStocks') IS NOT NULL
+	DROP TABLE UserStocks
+
+CREATE TABLE UserStocks(
+	UserID NVARCHAR(11) FOREIGN KEY REFERENCES Users(UserID),
+	Symbol NVARCHAR(4) FOREIGN KEY REFERENCES Symbols(Symbol),
+	Amount INT,
+	PRIMARY KEY(UserID, Symbol)
 )
 
 --8
@@ -80,7 +80,7 @@ IF OBJECT_ID('StockHistory') IS NOT NULL
 
 CREATE TABLE StockHistory(
 	[Date] DATE,
-	Symbol NVARCHAR(4),
+	Symbol NVARCHAR(4) FOREIGN KEY REFERENCES Symbols(Symbol),
 	[Open] MONEY,
 	[High] MONEY,
 	[Low] MONEY,
@@ -97,9 +97,9 @@ IF OBJECT_ID('TransactionsHistory') IS NOT NULL
 CREATE TABLE TransactionsHistory(
 	TransactionID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
 	[Date] DATE NOT NULL,
-	SellerID NVARCHAR(11) NOT NULL,
-	BuyerID NVARCHAR(11) NOT NULL,
-	Symbol NVARCHAR(4) NOT NULL,
+	SellerID NVARCHAR(11) NOT NULL FOREIGN KEY REFERENCES Users(UserID),
+	BuyerID NVARCHAR(11) NOT NULL FOREIGN KEY REFERENCES Users(UserID),
+	Symbol NVARCHAR(4) NOT NULL FOREIGN KEY REFERENCES Symbols(Symbol),
 	Amount INT NOT NULL,
 	SellPrice MONEY NOT NULL,
 	BuyerMaxPrice MONEY NOT NULL
@@ -570,7 +570,7 @@ CREATE PROCEDURE DepositMoney(
 )
 AS
 BEGIN
-	IF dbo.HasUser(@userID) = 1
+	IF dbo.HasUser(@userID) = 0
 		PRINT 'Nie istnieje taki u¿ytkownik'
 	ELSE
 	BEGIN
