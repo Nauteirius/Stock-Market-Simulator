@@ -26,7 +26,7 @@
 4. Kupno akcji
 5. Rejestracja
 6. Wplacanie pieniedzy na konto 
-7. [ ] Usnięcie użykownika
+7. Usnięcie użykownika
 
 # Funkcje i Widoki
 1. Czytanie daty urodzenia
@@ -43,18 +43,5 @@
 12. [ ] Wartość portfela użytkownika
 
 # Co przenieść do całości
-* [ ] Pokazanie akcji konkretnego użytkownika
-* [ ] Widok giełdy z konkretnego dnia
-* [ ] Widok histori konkretnej akcji
-* [ ] Wplacanie pieniedzy na konto
-* [ ] Czy użytkownik istnieje
-* [ ] Rejestracja
-* [ ] Czytanie daty urodzenia
-* [ ] Czytanie płci
-* [ ] Sprawdzanie czy pesel poprawny
-* [ ] Zmiana Passwords na RegisteredUsers
-* [ ] Tabele DeletedUsers
-* [ ] Usun gdy ilość równa 0 (BuyOrders)
-* [ ] Usuń gdy ilość równa 0 (SellOrders)
-* [ ] Usuń gdy ilość równa 0 (UserActions)
-* [ ] Wpisywanie daty usunięcia konta do DeletedUsers po usunięciu z registeredUsers
+* [ ] Dodanie referencji
+* [ ] Dokumentacja 

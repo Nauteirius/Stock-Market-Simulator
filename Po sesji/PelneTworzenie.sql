@@ -1,3 +1,4 @@
+--1
 IF OBJECT_ID('BuyOrders') IS NOT NULL
 	DROP TABLE BuyOrders
 
@@ -11,6 +12,7 @@ CREATE TABLE BuyOrders(
 	MaxPrice MONEY
 )
 
+--2
 IF OBJECT_ID('SellOrders') IS NOT NULL
 	DROP TABLE SellOrders
 
@@ -22,6 +24,7 @@ CREATE TABLE SellOrders(
 	Price MONEY
 )
 
+--3
 IF OBJECT_ID('Users') IS NOT NULL
 	DROP TABLE Users
 
@@ -32,15 +35,27 @@ CREATE TABLE Users(
 	BirthDay DATE
 )
 
-IF OBJECT_ID('Passwords') IS NOT NULL
-	DROP TABLE Passwords
+--4
+IF OBJECT_ID('RegisteredUsers') IS NOT NULL
+	DROP TABLE RegisteredUsers
 
-CREATE TABLE Passwords(
-	UserID NVARCHAR(11) PRIMARY KEY
-,
-	[Password] NVARCHAR(MAX)
+CREATE TABLE RegisteredUsers(
+	UserID NVARCHAR(11),
+	Password NVARCHAR(MAX)
 )
+GO
 
+--5
+IF OBJECT_ID('DeletedUsers') IS NOT NULL
+	DROP TABLE DeletedUsers
+
+CREATE TABLE DeletedUsers(
+	UserID NVARCHAR(11),
+	DeletionDate DATE
+)
+GO
+
+--6
 IF OBJECT_ID('UserStocks') IS NOT NULL
 	DROP TABLE UserStocks
 
@@ -51,6 +66,7 @@ CREATE TABLE UserStocks(
 	PRIMARY KEY(UserID, Symbol)
 )
 
+--7
 IF OBJECT_ID('Symbols') IS NOT NULL
 	DROP TABLE Symbols
 
@@ -58,6 +74,7 @@ CREATE TABLE Symbols(
 	Symbol NVARCHAR(4) PRIMARY KEY,
 )
 
+--8
 IF OBJECT_ID('StockHistory') IS NOT NULL
 	DROP TABLE StockHistory
 
@@ -73,6 +90,7 @@ CREATE TABLE StockHistory(
 )
 GO
 
+--9
 IF OBJECT_ID('TransactionsHistory') IS NOT NULL
 	DROP TABLE TransactionsHistory
 
@@ -90,11 +108,12 @@ GO
 
 --Funkcje
 
-IF OBJECT_ID('hasEnoughMoney') IS NOT NULL
-	DROP FUNCTION hasEnoughMoney
+--1
+IF OBJECT_ID('HasEnoughMoney') IS NOT NULL
+	DROP FUNCTION HasEnoughMoney
 GO
 
-CREATE FUNCTION hasEnoughMoney(
+CREATE FUNCTION HasEnoughMoney(
 	@userID NVARCHAR(11),
 	@money MONEY
 )
@@ -112,11 +131,12 @@ BEGIN
 END
 GO
 
-IF OBJECT_ID('hasEnoughStockActions') IS NOT NULL
-	DROP FUNCTION hasEnoughStockActions
+--2
+IF OBJECT_ID('HasEnoughStockActions') IS NOT NULL
+	DROP FUNCTION HasEnoughStockActions
 GO
 
-CREATE FUNCTION hasEnoughStockActions(
+CREATE FUNCTION HasEnoughStockActions(
 	@userID NVARCHAR(11),
 	@symbol NVARCHAR(4),
 	@amount INT
@@ -136,13 +156,193 @@ BEGIN
 END
 GO
 
---Procedury
-
-IF OBJECT_ID('addStocksToUser') IS NOT NULL
-	DROP PROCEDURE addStocksToUser
+--3
+IF OBJECT_ID('GetSpecificUserStocks') IS NOT NULL
+	DROP FUNCTION GetSpecificUserStocks
 GO
 
-CREATE PROCEDURE addStocksToUser(
+CREATE FUNCTION GetSpecificUserStocks(
+	@userID NVARCHAR(11)
+)
+RETURNS TABLE
+AS
+RETURN
+	SELECT * FROM UserStocks
+	WHERE UserID = @userID
+GO
+
+--4
+IF OBJECT_ID('GetStockMarketInSpecificDate') IS NOT NULL
+	DROP FUNCTION GetStockMarketInSpecificDate
+GO
+
+CREATE FUNCTION GetStockMarketInSpecificDate(
+	@date DATE
+)
+RETURNS TABLE
+AS
+RETURN
+	SELECT * FROM StockHistory
+	WHERE [Date] = @date
+GO
+
+--5
+IF OBJECT_ID('GetSpecificStockHistory') IS NOT NULL
+	DROP FUNCTION GetSpecificStockHistory
+GO
+
+CREATE FUNCTION GetSpecificStockHistory(
+	@symbol NVARCHAR(4)
+)
+RETURNS TABLE
+AS
+RETURN
+	SELECT * FROM StockHistory
+	WHERE Symbol = @symbol
+GO
+
+--6
+IF OBJECT_ID('HasUser') IS NOT NULL
+	DROP FUNCTION HasUser
+GO
+
+CREATE FUNCTION HasUser(
+	@userID NVARCHAR(11)
+)
+RETURNS BIT
+AS
+BEGIN
+	IF EXISTS( SELECT * FROM RegisteredUsers WHERE UserID = @userID)
+		RETURN 1
+	RETURN 0
+END
+GO
+
+--7
+IF OBJECT_ID('CheckPesel') IS NOT NULL
+	DROP FUNCTION CheckPesel
+GO
+
+CREATE FUNCTION CheckPesel(
+	@pesel nvarchar(11)
+)
+RETURNS bit
+AS
+BEGIN
+	DECLARE @return_bit AS bit
+	--DECLARE @digit AS int
+	DECLARE @control_sum AS int
+	SET @control_sum = 0
+
+	SET @control_sum = @control_sum + (SUBSTRING(@pesel, 1, 1)*1)
+	SET @control_sum = @control_sum + (SUBSTRING(@pesel, 2, 1)*3)
+	SET @control_sum = @control_sum + (SUBSTRING(@pesel, 3, 1)*7)
+	SET @control_sum = @control_sum + (SUBSTRING(@pesel, 4, 1)*9)
+	SET @control_sum = @control_sum + (SUBSTRING(@pesel, 5, 1)*1)
+	SET @control_sum = @control_sum + (SUBSTRING(@pesel, 6, 1)*3)
+	SET @control_sum = @control_sum + (SUBSTRING(@pesel, 7, 1)*7)
+	SET @control_sum = @control_sum + (SUBSTRING(@pesel, 8, 1)*9)
+	SET @control_sum = @control_sum + (SUBSTRING(@pesel, 9, 1)*1)
+	SET @control_sum = @control_sum + (SUBSTRING(@pesel, 10, 1)*3)
+
+	IF (10-(@control_sum % 10)) = SUBSTRING(@pesel, 11, 1)
+		SET @return_bit = 1
+	ELSE
+		SET @return_bit = 0
+
+	RETURN @return_bit
+END
+GO
+
+--8
+IF OBJECT_ID('CheckPassword') IS NOT NULL
+	DROP FUNCTION CheckPassword
+GO
+
+CREATE FUNCTION CheckPassword(
+	@password nvarchar(MAX)
+)
+RETURNS bit
+AS
+BEGIN
+	DECLARE @return_bit AS bit
+	
+	IF @password like '%[0-9]%' and @password like '%[A-Z]%' and @password like '%[a-z]%' and @password like '%[!@#$%a^&*()-_+=.,;:"`~]%' and len(@password) >= 8 --co z '
+		SET @return_bit = 1
+	ELSE
+		SET @return_bit = 0
+
+	RETURN @return_bit
+END
+GO
+
+--9
+IF OBJECT_ID('ReadSex') IS NOT NULL
+	DROP FUNCTION ReadSex
+GO
+
+CREATE FUNCTION ReadSex(
+	@pesel nvarchar(11)
+)
+RETURNS nvarchar(1)
+AS
+BEGIN
+	DECLARE @return_sex AS nvarchar(1)
+
+	DECLARE @sexNumber AS int
+	SET @sexNumber = SUBSTRING(@pesel, 10, 1)
+		
+	IF (@sexNumber % 2) = 0
+		SET @return_sex = 'W'
+	ELSE
+		SET @return_sex = 'M'
+
+	RETURN @return_sex
+END
+GO
+
+--10
+IF OBJECT_ID('ReadBirthDay') IS NOT NULL
+	DROP FUNCTION ReadBirthDay
+GO
+
+CREATE FUNCTION ReadBirthDay(
+	@pesel nvarchar(11)
+)
+RETURNS date
+AS
+BEGIN
+	DECLARE @return_date AS date
+
+	DECLARE @birthYear AS int
+	SET @birthYear = SUBSTRING(@pesel, 1, 2)
+	DECLARE @birthMounth AS int
+	SET @birthMounth = SUBSTRING(@pesel, 3, 2)
+	DECLARE @birthDay AS int
+	SET @birthDay = SUBSTRING(@pesel, 5, 2)
+
+	IF @birthMounth>20
+		BEGIN
+			SET @birthMounth = @birthMounth-20;
+			SET @birthYear = @birthYear+2000;
+		END
+	ELSE
+		SET @birthYear = @birthYear + 1900
+		
+	SET @return_date = DATEFROMPARTS(@birthYear, @birthMounth, @birthDay)
+
+	RETURN @return_date
+END
+GO
+
+--Procedury
+
+--1
+IF OBJECT_ID('AddStocksToUser') IS NOT NULL
+	DROP PROCEDURE AddStocksToUser
+GO
+
+CREATE PROCEDURE AddStocksToUser(
 	@userID NVARCHAR(11),
 	@symbol NVARCHAR(4),
 	@amount INT
@@ -163,11 +363,12 @@ BEGIN
 END
 GO
 
-IF OBJECT_ID('removeStocksFromUser') IS NOT NULL
-	DROP PROCEDURE removeStocksFromUser
+--2
+IF OBJECT_ID('RemoveStocksFromUser') IS NOT NULL
+	DROP PROCEDURE RemoveStocksFromUser
 GO
 
-CREATE PROCEDURE removeStocksFromUser(
+CREATE PROCEDURE RemoveStocksFromUser(
 	@userID NVARCHAR(11),
 	@symbol NVARCHAR(4),
 	@amount INT
@@ -190,6 +391,7 @@ BEGIN
 END
 GO
 
+--3
 IF OBJECT_ID('Buy') IS NOT NULL
 	DROP PROCEDURE Buy
 GO
@@ -274,11 +476,12 @@ BEGIN
 END
 GO
 
-IF OBJECT_ID('sell') IS NOT NULL
-	DROP PROCEDURE sell
+--4
+IF OBJECT_ID('Sell') IS NOT NULL
+	DROP PROCEDURE Sell
 GO
 
-CREATE PROCEDURE sell(
+CREATE PROCEDURE Sell(
 	@sellerID NVARCHAR(11),
 	@symbol NVARCHAR(4),
 	@amount INT,
@@ -356,8 +559,72 @@ BEGIN
 END
 GO
 
+--5
+IF OBJECT_ID('DepositMoney') IS NOT NULL
+	DROP PROCEDURE DepositMoney
+GO
+
+CREATE PROCEDURE DepositMoney(
+	@userID NVARCHAR(11),
+	@money MONEY
+)
+AS
+BEGIN
+	IF dbo.HasUser(@userID) = 1
+		PRINT 'Nie istnieje taki u¿ytkownik'
+	ELSE
+	BEGIN
+		UPDATE Users
+		SET Balance = Balance + @money
+		WHERE UserID = @userID
+	END
+END
+GO
+
+--6
+IF OBJECT_ID('RegisterUser') IS NOT NULL
+	DROP PROCEDURE RegisterUser
+GO
+
+CREATE PROCEDURE RegisterUser(
+	@pesel nvarchar(11), @password nvarchar(MAX)
+)
+AS
+BEGIN
+	IF dbo.CheckPesel(@pesel) = 1 and dbo.CheckPassword(@password) = 1
+	BEGIN
+		INSERT INTO Users (UserID, Balance, Sex, BirthDay)
+		VALUES (@pesel, 0, dbo.ReadSex(@pesel), dbo.ReadBirthDay(@pesel))
+	
+		INSERT INTO RegisteredUsers(UserID, Password)
+		VALUES (@pesel, @password)
+	END
+	ELSE
+		PRINT 'Cos nie tak z danymi'
+END
+GO
+
+--7
+IF OBJECT_ID('DeleteUser') IS NOT NULL
+	DROP PROCEDURE DeleteUser
+GO
+
+CREATE PROCEDURE DeleteUser(
+	@pesel nvarchar(11)
+)
+AS
+BEGIN
+	IF dbo.HasUser(@pesel) = 1
+		DELETE FROM RegisteredUsers
+		WHERE UserID = @pesel
+	ELSE
+		PRINT 'Podany u¿ytkownik nie jest zarejestrowany wiêc nie mogê go usun¹æ'
+END
+GO
+
 --TWORZENIE TRIGGERÓW
 
+--1
 IF OBJECT_ID('ReturnRestFromDepositedMoney') IS NOT NULL
 	DROP TRIGGER ReturnRestFromDepositedMoney
 GO
@@ -379,6 +646,7 @@ BEGIN
 END
 GO
 
+--2
 IF OBJECT_ID('TransferSaleMoney') IS NOT NULL
 	DROP TRIGGER TransferSaleMoney
 GO
@@ -399,6 +667,7 @@ BEGIN
 END
 GO
 
+--3
 IF OBJECT_ID('UpdateStockHistory') IS NOT NULL
 	DROP TRIGGER UpdateStockHistory
 GO
@@ -437,6 +706,7 @@ BEGIN
 END
 GO
 
+--4
 IF OBJECT_ID('TransferSymbols') IS NOT NULL
 	DROP TRIGGER TransferSymbols
 GO
@@ -452,5 +722,84 @@ BEGIN
 	FROM inserted
 
 	EXECUTE dbo.addStocksToUser @buyerID, @symbol, @amount
+END
+GO
+
+--5
+IF OBJECT_ID('MigrateRegisteredUserToDeletedUser') IS NOT NULL
+	DROP TRIGGER MigrateRegisteredUserToDeletedUser
+GO
+
+CREATE TRIGGER MigrateRegisteredUserToDeletedUser
+ON RegisteredUsers
+FOR DELETE
+AS
+BEGIN
+	DECLARE @userID NVARCHAR(11)
+
+	SELECT @userID = UserID FROM deleted
+
+	INSERT INTO DeletedUsers
+	VALUES(@userID, GETDATE())
+END
+GO
+
+--6
+IF OBJECT_ID('DeleteEmptyUserStock') IS NOT NULL
+	DROP TRIGGER DeleteEmptyUserStock
+GO
+
+CREATE TRIGGER DeleteEmptyUserStock
+ON UserStocks
+FOR UPDATE
+AS
+BEGIN
+	DECLARE @userID NVARCHAR(11), @symbol NVARCHAR(4), @amount INT
+
+	SELECT @userID = UserID, @symbol = Symbol, @amount = Amount FROM inserted
+
+	IF @amount = 0
+		DELETE FROM UserStocks
+		WHERE UserID = @userID AND Symbol = @symbol
+END
+GO
+
+--7
+IF OBJECT_ID('DeleteEmptyBuyOrder') IS NOT NULL
+	DROP TRIGGER DeleteEmptyBuyOrder
+GO
+
+CREATE TRIGGER DeleteEmptyBuyOrder
+ON BuyOrders
+FOR UPDATE
+AS
+BEGIN
+	DECLARE @buyID INT, @amount INT
+
+	SELECT @buyID = OrderID, @amount = Amount FROM inserted
+
+	IF @amount = 0
+		DELETE FROM BuyOrders
+		WHERE OrderID = @buyID
+END
+GO
+
+--8
+IF OBJECT_ID('DeleteEmptySellOrder') IS NOT NULL
+	DROP TRIGGER DeleteEmptySellOrder
+GO
+
+CREATE TRIGGER DeleteEmptySellOrder
+ON SellOrders
+FOR UPDATE
+AS
+BEGIN
+	DECLARE @sellID INT, @amount INT
+
+	SELECT @sellID = OrderID, @amount = Amount FROM inserted
+
+	IF @amount = 0
+		DELETE FROM SellOrders
+		WHERE OrderID = @sellID
 END
 GO
