@@ -663,7 +663,8 @@ GO
 
 truncate table dbo.yahoo_prices_volumes_for_MSSQLTips_nvarchar
 bulk insert dbo.yahoo_prices_volumes_for_MSSQLTips_nvarchar
-from 'C:\Studia\Bazy danych\Projekt\Stock-Market-Simulator\yahoo_prices_volumes_for_ExchangeSymbols_from_01012022_291222.csv'
+DECLARE @path nvarchar(MAX)
+from @path
 with
 (
     firstrow = 2,
