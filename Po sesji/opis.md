@@ -1,5 +1,6 @@
 # Podstawowe założenia projektu:
 * Celem projektu jest stworzenie bazy danych dla giełdy, która umożliwi łatwe i efektywne zarządzanie transakcjami kupna i sprzedaży akcji, a także śledzenie aktualnych notowań.
+* Ogólne założenia projektu:
   - Handel akcjami
   - Zarządzanie użytkownikami
   - Przegląd historycznych danych
@@ -14,6 +15,17 @@
 
 # Diagram ER:
 ![Diagram ER](DiagramER.png)
+
+# Schemat baz danych:
+![BuyOrders Table](SchematyTabel/BuyOrdersSchema.png)
+![DeletedUsersSchema Table](SchematyTabel/DeletedUsersSchema.png)
+![RegisteredUsers Table](SchematyTabel/RegisteredUsersSchema.png)
+![SellOrders Table](SchematyTabel/SellOrdersSchema.png)
+![StockHistory Table](SchematyTabel/StockHistorySchema.png)
+![Symbols Table](SchematyTabel/SymbolsSchema.png)
+![TransactionsHistory Table](SchematyTabel/TransationsHistorySchema.png)
+![Users Table](SchematyTabel/UsersSchema.png)
+![UserStocks Table](SchematyTabel/UserStocksSchema.png)
 
 # Funkcje:
 * Pierwsza funkcja nazywa się HasEnoughMoney i przyjmuje jako parametry wejściowe ID użytkownika i kwotę pieniędzy. Zwraca wartość bitową wskazującą, czy użytkownik ma wystarczająco dużo pieniędzy na swoim koncie, aby dokonać transakcji w określonej kwocie. Funkcja najpierw sprawdza saldo użytkownika w stosunku do żądanej kwoty i zwraca 1, jeśli saldo jest większe lub równe żądanej kwocie; w przeciwnym razie zwraca 0.

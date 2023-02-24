@@ -1,101 +1,68 @@
---1
-IF OBJECT_ID('Users') IS NOT NULL
-	DROP TABLE Users
+IF EXISTS(SELECT * FROM sys.databases WHERE name='StockMarketDB')
+	DROP DATABASE StockMarketDB
+
+CREATE DATABASE StockMarketDB
+GO
+
+USE StockMarketDB
 
 CREATE TABLE Users(
 	UserID NVARCHAR(11) PRIMARY KEY,
-	Balance MONEY,
-	Sex NVARCHAR(1),
-	BirthDay DATE
+	Balance MONEY NOT NULL,
+	Sex NVARCHAR(1) NOT NULL,
+	BirthDay DATE NOT NULL
 )
-
---2
-IF OBJECT_ID('Symbols') IS NOT NULL
-	DROP TABLE Symbols
 
 CREATE TABLE Symbols(
 	Symbol NVARCHAR(4) PRIMARY KEY,
 )
 
---3
-IF OBJECT_ID('BuyOrders') IS NOT NULL
-	DROP TABLE BuyOrders
-
 CREATE TABLE BuyOrders(
 	OrderID INT IDENTITY(1, 1) PRIMARY KEY,
-	BuyerID NVARCHAR(11) FOREIGN KEY REFERENCES Users(UserID),
-	Symbol NVARCHAR(4) FOREIGN KEY REFERENCES Symbols(Symbol),
-	Amount INT,
-	MoneySpent MONEY,
-	TotalDeposit MONEY,
-	MaxPrice MONEY
+	BuyerID NVARCHAR(11) FOREIGN KEY REFERENCES Users(UserID) NOT NULL,
+	Symbol NVARCHAR(4) FOREIGN KEY REFERENCES Symbols(Symbol) NOT NULL,
+	Amount INT NOT NULL,
+	MoneySpent MONEY NOT NULL,
+	TotalDeposit MONEY NOT NULL,
+	MaxPrice MONEY NOT NULL
 )
-
---4
-IF OBJECT_ID('SellOrders') IS NOT NULL
-	DROP TABLE SellOrders
 
 CREATE TABLE SellOrders(
 	OrderID INT IDENTITY(1, 1) PRIMARY KEY,
-	SellerID NVARCHAR(11) FOREIGN KEY REFERENCES Users(UserID),
-	Symbol NVARCHAR(4) FOREIGN KEY REFERENCES Symbols(Symbol),
-	Amount INT,
-	Price MONEY
+	SellerID NVARCHAR(11) FOREIGN KEY REFERENCES Users(UserID) NOT NULL,
+	Symbol NVARCHAR(4) FOREIGN KEY REFERENCES Symbols(Symbol) NOT NULL,
+	Amount INT NOT NULL,
+	Price MONEY NOT NULL
 )
-
---5
-IF OBJECT_ID('RegisteredUsers') IS NOT NULL
-	DROP TABLE RegisteredUsers
 
 CREATE TABLE RegisteredUsers(
 	UserID NVARCHAR(11) PRIMARY KEY FOREIGN KEY REFERENCES Users(UserID),
-	Password NVARCHAR(MAX)
+	Password NVARCHAR(MAX) NOT NULL
 )
-GO
-
---6
-IF OBJECT_ID('DeletedUsers') IS NOT NULL
-	DROP TABLE DeletedUsers
 
 CREATE TABLE DeletedUsers(
 	UserID NVARCHAR(11) PRIMARY KEY FOREIGN KEY REFERENCES Users(UserID),
-	DeletionDate DATE
+	DeletionDate DATE NOT NULL
 )
-GO
-
---7
-IF OBJECT_ID('UserStocks') IS NOT NULL
-	DROP TABLE UserStocks
 
 CREATE TABLE UserStocks(
 	UserID NVARCHAR(11) FOREIGN KEY REFERENCES Users(UserID),
 	Symbol NVARCHAR(4) FOREIGN KEY REFERENCES Symbols(Symbol),
-	Amount INT,
+	Amount INT NOT NULL,
 	PRIMARY KEY(UserID, Symbol)
 )
-
---8
-IF OBJECT_ID('StockHistory') IS NOT NULL
-	DROP TABLE StockHistory
 
 CREATE TABLE StockHistory(
 	[Date] DATE,
 	Symbol NVARCHAR(4) FOREIGN KEY REFERENCES Symbols(Symbol),
-	[Open] MONEY,
-	[High] MONEY,
-	[Low] MONEY,
-	[Close] MONEY,
-	Volume INT,
+	[High] MONEY NOT NULL,
+	[Low] MONEY NOT NULL,
+	Volume INT NOT NULL,
 	PRIMARY KEY([Date], Symbol)
 )
-GO
-
---9
-IF OBJECT_ID('TransactionsHistory') IS NOT NULL
-	DROP TABLE TransactionsHistory
 
 CREATE TABLE TransactionsHistory(
-	TransactionID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	TransactionID INT IDENTITY(1,1) PRIMARY KEY,
 	[Date] DATE NOT NULL,
 	SellerID NVARCHAR(11) NOT NULL FOREIGN KEY REFERENCES Users(UserID),
 	BuyerID NVARCHAR(11) NOT NULL FOREIGN KEY REFERENCES Users(UserID),
@@ -107,11 +74,6 @@ CREATE TABLE TransactionsHistory(
 GO
 
 --Funkcje
-
---1
-IF OBJECT_ID('HasEnoughMoney') IS NOT NULL
-	DROP FUNCTION HasEnoughMoney
-GO
 
 CREATE FUNCTION HasEnoughMoney(
 	@userID NVARCHAR(11),
@@ -129,11 +91,6 @@ BEGIN
 
 	RETURN @returnBit
 END
-GO
-
---2
-IF OBJECT_ID('HasEnoughStockActions') IS NOT NULL
-	DROP FUNCTION HasEnoughStockActions
 GO
 
 CREATE FUNCTION HasEnoughStockActions(
@@ -156,11 +113,6 @@ BEGIN
 END
 GO
 
---3
-IF OBJECT_ID('GetSpecificUserStocks') IS NOT NULL
-	DROP FUNCTION GetSpecificUserStocks
-GO
-
 CREATE FUNCTION GetSpecificUserStocks(
 	@userID NVARCHAR(11)
 )
@@ -169,11 +121,6 @@ AS
 RETURN
 	SELECT * FROM UserStocks
 	WHERE UserID = @userID
-GO
-
---4
-IF OBJECT_ID('GetStockMarketInSpecificDate') IS NOT NULL
-	DROP FUNCTION GetStockMarketInSpecificDate
 GO
 
 CREATE FUNCTION GetStockMarketInSpecificDate(
@@ -186,11 +133,6 @@ RETURN
 	WHERE [Date] = @date
 GO
 
---5
-IF OBJECT_ID('GetSpecificStockHistory') IS NOT NULL
-	DROP FUNCTION GetSpecificStockHistory
-GO
-
 CREATE FUNCTION GetSpecificStockHistory(
 	@symbol NVARCHAR(4)
 )
@@ -199,11 +141,6 @@ AS
 RETURN
 	SELECT * FROM StockHistory
 	WHERE Symbol = @symbol
-GO
-
---6
-IF OBJECT_ID('HasUser') IS NOT NULL
-	DROP FUNCTION HasUser
 GO
 
 CREATE FUNCTION HasUser(
@@ -216,11 +153,6 @@ BEGIN
 		RETURN 1
 	RETURN 0
 END
-GO
-
---7
-IF OBJECT_ID('CheckPesel') IS NOT NULL
-	DROP FUNCTION CheckPesel
 GO
 
 CREATE FUNCTION CheckPesel(
@@ -254,11 +186,6 @@ BEGIN
 END
 GO
 
---8
-IF OBJECT_ID('CheckPassword') IS NOT NULL
-	DROP FUNCTION CheckPassword
-GO
-
 CREATE FUNCTION CheckPassword(
 	@password nvarchar(MAX)
 )
@@ -274,11 +201,6 @@ BEGIN
 
 	RETURN @return_bit
 END
-GO
-
---9
-IF OBJECT_ID('ReadSex') IS NOT NULL
-	DROP FUNCTION ReadSex
 GO
 
 CREATE FUNCTION ReadSex(
@@ -299,11 +221,6 @@ BEGIN
 
 	RETURN @return_sex
 END
-GO
-
---10
-IF OBJECT_ID('ReadBirthDay') IS NOT NULL
-	DROP FUNCTION ReadBirthDay
 GO
 
 CREATE FUNCTION ReadBirthDay(
@@ -337,11 +254,6 @@ GO
 
 --Procedury
 
---1
-IF OBJECT_ID('AddStocksToUser') IS NOT NULL
-	DROP PROCEDURE AddStocksToUser
-GO
-
 CREATE PROCEDURE AddStocksToUser(
 	@userID NVARCHAR(11),
 	@symbol NVARCHAR(4),
@@ -361,11 +273,6 @@ BEGIN
 		WHERE UserID = @userID AND Symbol = @symbol
 	END
 END
-GO
-
---2
-IF OBJECT_ID('RemoveStocksFromUser') IS NOT NULL
-	DROP PROCEDURE RemoveStocksFromUser
 GO
 
 CREATE PROCEDURE RemoveStocksFromUser(
@@ -389,11 +296,6 @@ BEGIN
 	ELSE
 		PRINT 'Podany u�ytkownik o ID: ' + @userID + ' nie posiada akcji ' + @symbol 
 END
-GO
-
---3
-IF OBJECT_ID('Buy') IS NOT NULL
-	DROP PROCEDURE Buy
 GO
 
 CREATE PROCEDURE Buy(
@@ -476,11 +378,6 @@ BEGIN
 END
 GO
 
---4
-IF OBJECT_ID('Sell') IS NOT NULL
-	DROP PROCEDURE Sell
-GO
-
 CREATE PROCEDURE Sell(
 	@sellerID NVARCHAR(11),
 	@symbol NVARCHAR(4),
@@ -559,11 +456,6 @@ BEGIN
 END
 GO
 
---5
-IF OBJECT_ID('DepositMoney') IS NOT NULL
-	DROP PROCEDURE DepositMoney
-GO
-
 CREATE PROCEDURE DepositMoney(
 	@userID NVARCHAR(11),
 	@money MONEY
@@ -579,11 +471,6 @@ BEGIN
 		WHERE UserID = @userID
 	END
 END
-GO
-
---6
-IF OBJECT_ID('RegisterUser') IS NOT NULL
-	DROP PROCEDURE RegisterUser
 GO
 
 CREATE PROCEDURE RegisterUser(
@@ -604,11 +491,6 @@ BEGIN
 END
 GO
 
---7
-IF OBJECT_ID('DeleteUser') IS NOT NULL
-	DROP PROCEDURE DeleteUser
-GO
-
 CREATE PROCEDURE DeleteUser(
 	@pesel nvarchar(11)
 )
@@ -622,12 +504,7 @@ BEGIN
 END
 GO
 
---TWORZENIE TRIGGER�W
-
---1
-IF OBJECT_ID('ReturnRestFromDepositedMoney') IS NOT NULL
-	DROP TRIGGER ReturnRestFromDepositedMoney
-GO
+--TWORZENIE TRIGGERÓW
 
 CREATE TRIGGER ReturnRestFromDepositedMoney
 ON TransactionsHistory
@@ -646,11 +523,6 @@ BEGIN
 END
 GO
 
---2
-IF OBJECT_ID('TransferSaleMoney') IS NOT NULL
-	DROP TRIGGER TransferSaleMoney
-GO
-
 CREATE TRIGGER TransferSaleMoney
 ON TransactionsHistory
 AFTER INSERT
@@ -665,11 +537,6 @@ BEGIN
 	SET Balance = Balance + (@amount * @sellPrice)
 	WHERE UserID = @sellerID
 END
-GO
-
---3
-IF OBJECT_ID('UpdateStockHistory') IS NOT NULL
-	DROP TRIGGER UpdateStockHistory
 GO
 
 CREATE TRIGGER UpdateStockHistory
@@ -695,20 +562,15 @@ BEGIN
 			SET @high = @sellPrice
 
 		UPDATE StockHistory
-		SET [Low] = @low, [High] = @high
+		SET [Low] = @low, [High] = @high, Volume = Volume + 1
 		WHERE [Date] = @date AND Symbol = @symbol
 	END
 	ELSE
 	BEGIN
 		INSERT INTO StockHistory
-		VALUES (@date, @symbol, @sellPrice, @sellPrice, @sellPrice, @sellPrice, 0)
+		VALUES (@date, @symbol, @sellPrice, @sellPrice, 1)
 	END
 END
-GO
-
---4
-IF OBJECT_ID('TransferSymbols') IS NOT NULL
-	DROP TRIGGER TransferSymbols
 GO
 
 CREATE TRIGGER TransferSymbols
@@ -725,11 +587,6 @@ BEGIN
 END
 GO
 
---5
-IF OBJECT_ID('MigrateRegisteredUserToDeletedUser') IS NOT NULL
-	DROP TRIGGER MigrateRegisteredUserToDeletedUser
-GO
-
 CREATE TRIGGER MigrateRegisteredUserToDeletedUser
 ON RegisteredUsers
 FOR DELETE
@@ -742,11 +599,6 @@ BEGIN
 	INSERT INTO DeletedUsers
 	VALUES(@userID, GETDATE())
 END
-GO
-
---6
-IF OBJECT_ID('DeleteEmptyUserStock') IS NOT NULL
-	DROP TRIGGER DeleteEmptyUserStock
 GO
 
 CREATE TRIGGER DeleteEmptyUserStock
@@ -764,11 +616,6 @@ BEGIN
 END
 GO
 
---7
-IF OBJECT_ID('DeleteEmptyBuyOrder') IS NOT NULL
-	DROP TRIGGER DeleteEmptyBuyOrder
-GO
-
 CREATE TRIGGER DeleteEmptyBuyOrder
 ON BuyOrders
 FOR UPDATE
@@ -782,11 +629,6 @@ BEGIN
 		DELETE FROM BuyOrders
 		WHERE OrderID = @buyID
 END
-GO
-
---8
-IF OBJECT_ID('DeleteEmptySellOrder') IS NOT NULL
-	DROP TRIGGER DeleteEmptySellOrder
 GO
 
 CREATE TRIGGER DeleteEmptySellOrder
