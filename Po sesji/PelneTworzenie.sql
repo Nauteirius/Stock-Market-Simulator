@@ -664,6 +664,7 @@ GO
 truncate table dbo.yahoo_prices_volumes_for_MSSQLTips_nvarchar
 bulk insert dbo.yahoo_prices_volumes_for_MSSQLTips_nvarchar
 DECLARE @path nvarchar(MAX)
+SET @path='' -- path to csv
 from @path
 with
 (
