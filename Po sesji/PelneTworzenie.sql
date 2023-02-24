@@ -645,3 +645,40 @@ BEGIN
 		WHERE OrderID = @sellID
 END
 GO
+
+INSERT INTO Symbols
+VALUES ('ATNF'), ('SPY'), ('FUTU'), ('GLD'), ('MRK')
+GO
+
+CREATE TABLE dbo.yahoo_prices_volumes_for_MSSQLTips_nvarchar(
+   [Date] date,
+   [Symbol] nvarchar(10),
+   [Open] nvarchar(50) NULL,
+   [High] nvarchar(50) NULL,
+   [Low] nvarchar(50) NULL,
+   [Close] nvarchar(50) NULL,
+   [Volume] nvarchar(50) NULL
+) 
+GO
+
+truncate table dbo.yahoo_prices_volumes_for_MSSQLTips_nvarchar
+bulk insert dbo.yahoo_prices_volumes_for_MSSQLTips_nvarchar
+from 'C:\Studia\Bazy danych\Projekt\Stock-Market-Simulator\yahoo_prices_volumes_for_ExchangeSymbols_from_01012022_291222.csv'
+with
+(
+    firstrow = 2,
+    fieldterminator = ',',  --CSV field delimiter
+    rowterminator = '\n'
+)
+GO
+
+insert into StockHistory
+select 
+   [Date],
+   [Symbol],
+   [High],
+   [Low],
+   cast([Volume] as float) 
+from dbo.yahoo_prices_volumes_for_MSSQLTips_nvarchar
+
+DROP TABLE yahoo_prices_volumes_for_MSSQLTips_nvarchar

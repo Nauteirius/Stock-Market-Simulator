@@ -367,7 +367,8 @@ code {
   </script>
 <h1 id="podstawowe-za%C5%82o%C5%BCenia-projektu">Podstawowe założenia projektu:</h1>
 <ul>
-<li>Celem projektu jest stworzenie bazy danych dla giełdy, która umożliwi łatwe i efektywne zarządzanie transakcjami kupna i sprzedaży akcji, a także śledzenie aktualnych notowań.
+<li>Celem projektu jest stworzenie bazy danych dla giełdy, która umożliwi łatwe i efektywne zarządzanie transakcjami kupna i sprzedaży akcji, a także śledzenie aktualnych notowań.</li>
+<li>Ogólne założenia projektu:
 <ul>
 <li>Handel akcjami</li>
 <li>Zarządzanie użytkownikami</li>
@@ -434,6 +435,698 @@ code {
 <li>Szósty trigger &quot;DeleteUserStock&quot; - po aktualizacji wiersza w tabeli UserStocks, trigger ten jest wyzwalany i pobiera informacje o użytkowniku (UserID), symbolu akcji (Symbol) oraz ilości akcji (Amount) z tabeli &quot;inserted&quot;. Jeśli ilość akcji wynosi zero, trigger usuwa wiersz z tabeli UserStocks.</li>
 <li>Siódmy trigger &quot;DeleteEmptyBuyOrder&quot; - po aktualizacji wiersza w tabeli BuyOrders, trigger ten jest wyzwalany i pobiera informacje o ID zamówienia kupna (OrderID) oraz ilości zamówionych akcji (Amount) z tabeli &quot;inserted&quot;. Jeśli ilość zamówionych akcji wynosi zero, trigger usuwa wiersz z tabeli BuyOrders.</li>
 <li>Ósmy trigger &quot;DeleteEmptySellOrder&quot; - po aktualizacji wiersza w tabeli SellOrders, trigger ten jest wyzwalany i pobiera informacje o ID zamówienia sprzedaży (OrderID) oraz ilości zamówionych akcji (Amount) z tabeli &quot;inserted&quot;. Jeśli ilość zamówionych akcji wynosi zero, trigger usuwa wiersz z tabeli SellOrders.</li>
+</ul>
+<h1 id="skrypt-tworz%C4%85cy-baz%C4%99-danych">Skrypt tworzący bazę danych:</h1>
+<pre class="hljs"><code><div>IF EXISTS(<span class="hljs-keyword">SELECT</span> * <span class="hljs-keyword">FROM</span> sys.databases <span class="hljs-keyword">WHERE</span> <span class="hljs-keyword">name</span>=<span class="hljs-string">'StockMarketDB'</span>)
+	<span class="hljs-keyword">DROP</span> <span class="hljs-keyword">DATABASE</span> StockMarketDB
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">DATABASE</span> StockMarketDB
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-keyword">USE</span> StockMarketDB
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> <span class="hljs-keyword">Users</span>(
+	UserID <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">11</span>) PRIMARY <span class="hljs-keyword">KEY</span>,
+	Balance MONEY <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,
+	Sex <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">1</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,
+	BirthDay <span class="hljs-built_in">DATE</span> <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>
+)
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> Symbols(
+	Symbol <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">4</span>) PRIMARY <span class="hljs-keyword">KEY</span>,
+)
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> BuyOrders(
+	OrderID <span class="hljs-built_in">INT</span> <span class="hljs-keyword">IDENTITY</span>(<span class="hljs-number">1</span>, <span class="hljs-number">1</span>) PRIMARY <span class="hljs-keyword">KEY</span>,
+	BuyerID <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">11</span>) <span class="hljs-keyword">FOREIGN</span> <span class="hljs-keyword">KEY</span> <span class="hljs-keyword">REFERENCES</span> <span class="hljs-keyword">Users</span>(UserID) <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,
+	Symbol <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">4</span>) <span class="hljs-keyword">FOREIGN</span> <span class="hljs-keyword">KEY</span> <span class="hljs-keyword">REFERENCES</span> Symbols(Symbol) <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,
+	Amount <span class="hljs-built_in">INT</span> <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,
+	MoneySpent MONEY <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,
+	TotalDeposit MONEY <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,
+	MaxPrice MONEY <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>
+)
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> SellOrders(
+	OrderID <span class="hljs-built_in">INT</span> <span class="hljs-keyword">IDENTITY</span>(<span class="hljs-number">1</span>, <span class="hljs-number">1</span>) PRIMARY <span class="hljs-keyword">KEY</span>,
+	SellerID <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">11</span>) <span class="hljs-keyword">FOREIGN</span> <span class="hljs-keyword">KEY</span> <span class="hljs-keyword">REFERENCES</span> <span class="hljs-keyword">Users</span>(UserID) <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,
+	Symbol <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">4</span>) <span class="hljs-keyword">FOREIGN</span> <span class="hljs-keyword">KEY</span> <span class="hljs-keyword">REFERENCES</span> Symbols(Symbol) <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,
+	Amount <span class="hljs-built_in">INT</span> <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,
+	Price MONEY <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>
+)
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> RegisteredUsers(
+	UserID <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">11</span>) PRIMARY <span class="hljs-keyword">KEY</span> <span class="hljs-keyword">FOREIGN</span> <span class="hljs-keyword">KEY</span> <span class="hljs-keyword">REFERENCES</span> <span class="hljs-keyword">Users</span>(UserID),
+	<span class="hljs-keyword">Password</span> <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-keyword">MAX</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>
+)
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> DeletedUsers(
+	UserID <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">11</span>) PRIMARY <span class="hljs-keyword">KEY</span> <span class="hljs-keyword">FOREIGN</span> <span class="hljs-keyword">KEY</span> <span class="hljs-keyword">REFERENCES</span> <span class="hljs-keyword">Users</span>(UserID),
+	DeletionDate <span class="hljs-built_in">DATE</span> <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>
+)
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> UserStocks(
+	UserID <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">11</span>) <span class="hljs-keyword">FOREIGN</span> <span class="hljs-keyword">KEY</span> <span class="hljs-keyword">REFERENCES</span> <span class="hljs-keyword">Users</span>(UserID),
+	Symbol <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">4</span>) <span class="hljs-keyword">FOREIGN</span> <span class="hljs-keyword">KEY</span> <span class="hljs-keyword">REFERENCES</span> Symbols(Symbol),
+	Amount <span class="hljs-built_in">INT</span> <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,
+	PRIMARY <span class="hljs-keyword">KEY</span>(UserID, Symbol)
+)
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> StockHistory(
+	[<span class="hljs-built_in">Date</span>] <span class="hljs-built_in">DATE</span>,
+	Symbol <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">4</span>) <span class="hljs-keyword">FOREIGN</span> <span class="hljs-keyword">KEY</span> <span class="hljs-keyword">REFERENCES</span> Symbols(Symbol),
+	[<span class="hljs-keyword">High</span>] MONEY <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,
+	[<span class="hljs-keyword">Low</span>] MONEY <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,
+	Volume <span class="hljs-built_in">INT</span> <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,
+	PRIMARY <span class="hljs-keyword">KEY</span>([<span class="hljs-built_in">Date</span>], Symbol)
+)
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> TransactionsHistory(
+	TransactionID <span class="hljs-built_in">INT</span> <span class="hljs-keyword">IDENTITY</span>(<span class="hljs-number">1</span>,<span class="hljs-number">1</span>) PRIMARY <span class="hljs-keyword">KEY</span>,
+	[<span class="hljs-built_in">Date</span>] <span class="hljs-built_in">DATE</span> <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,
+	SellerID <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">11</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span> <span class="hljs-keyword">FOREIGN</span> <span class="hljs-keyword">KEY</span> <span class="hljs-keyword">REFERENCES</span> <span class="hljs-keyword">Users</span>(UserID),
+	BuyerID <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">11</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span> <span class="hljs-keyword">FOREIGN</span> <span class="hljs-keyword">KEY</span> <span class="hljs-keyword">REFERENCES</span> <span class="hljs-keyword">Users</span>(UserID),
+	Symbol <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">4</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span> <span class="hljs-keyword">FOREIGN</span> <span class="hljs-keyword">KEY</span> <span class="hljs-keyword">REFERENCES</span> Symbols(Symbol),
+	Amount <span class="hljs-built_in">INT</span> <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,
+	SellPrice MONEY <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,
+	BuyerMaxPrice MONEY <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>
+)
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-comment">--Funkcje</span>
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">FUNCTION</span> HasEnoughMoney(
+	@userID <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">11</span>),
+	@money MONEY
+)
+<span class="hljs-keyword">RETURNS</span> <span class="hljs-built_in">BIT</span>
+<span class="hljs-keyword">AS</span>
+<span class="hljs-keyword">BEGIN</span>
+	<span class="hljs-keyword">DECLARE</span> @returnBit <span class="hljs-built_in">BIT</span>
+
+	<span class="hljs-keyword">IF</span> @money &gt; (<span class="hljs-keyword">select</span> Balance <span class="hljs-keyword">from</span> <span class="hljs-keyword">Users</span> <span class="hljs-keyword">where</span> UserId=@userID)
+		<span class="hljs-keyword">SET</span> @returnBit = <span class="hljs-number">0</span>
+	<span class="hljs-keyword">ELSE</span>
+		<span class="hljs-keyword">SET</span> @returnBit = <span class="hljs-number">1</span>
+
+	<span class="hljs-keyword">RETURN</span> @returnBit
+<span class="hljs-keyword">END</span>
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">FUNCTION</span> HasEnoughStockActions(
+	@userID <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">11</span>),
+	@symbol <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">4</span>),
+	@amount <span class="hljs-built_in">INT</span>
+)
+<span class="hljs-keyword">RETURNS</span> <span class="hljs-built_in">BIT</span>
+<span class="hljs-keyword">AS</span>
+<span class="hljs-keyword">BEGIN</span>
+	<span class="hljs-keyword">DECLARE</span> @returnBit <span class="hljs-built_in">BIT</span>
+	<span class="hljs-keyword">IF</span> <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> (<span class="hljs-keyword">SELECT</span> * <span class="hljs-keyword">FROM</span> UserStocks <span class="hljs-keyword">WHERE</span> UserID=@userID <span class="hljs-keyword">AND</span> Symbol=@symbol)
+		<span class="hljs-keyword">SET</span> @returnBit = <span class="hljs-number">0</span>
+	<span class="hljs-keyword">ELSE</span> <span class="hljs-keyword">IF</span> (<span class="hljs-keyword">SELECT</span> Amount <span class="hljs-keyword">FROM</span> UserStocks <span class="hljs-keyword">WHERE</span> UserID=@userID <span class="hljs-keyword">AND</span> Symbol=@symbol) &lt; @amount
+		<span class="hljs-keyword">SET</span> @returnBit = <span class="hljs-number">0</span>
+	<span class="hljs-keyword">ELSE</span>
+		<span class="hljs-keyword">SET</span> @returnBit = <span class="hljs-number">1</span>
+
+	<span class="hljs-keyword">RETURN</span> @returnBit
+<span class="hljs-keyword">END</span>
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">FUNCTION</span> GetSpecificUserStocks(
+	@userID <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">11</span>)
+)
+<span class="hljs-keyword">RETURNS</span> <span class="hljs-keyword">TABLE</span>
+<span class="hljs-keyword">AS</span>
+<span class="hljs-keyword">RETURN</span>
+	<span class="hljs-keyword">SELECT</span> * <span class="hljs-keyword">FROM</span> UserStocks
+	<span class="hljs-keyword">WHERE</span> UserID = @userID
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">FUNCTION</span> GetStockMarketInSpecificDate(
+	@<span class="hljs-built_in">date</span> <span class="hljs-built_in">DATE</span>
+)
+<span class="hljs-keyword">RETURNS</span> <span class="hljs-keyword">TABLE</span>
+<span class="hljs-keyword">AS</span>
+<span class="hljs-keyword">RETURN</span>
+	<span class="hljs-keyword">SELECT</span> * <span class="hljs-keyword">FROM</span> StockHistory
+	<span class="hljs-keyword">WHERE</span> [<span class="hljs-built_in">Date</span>] = @<span class="hljs-built_in">date</span>
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">FUNCTION</span> GetSpecificStockHistory(
+	@symbol <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">4</span>)
+)
+<span class="hljs-keyword">RETURNS</span> <span class="hljs-keyword">TABLE</span>
+<span class="hljs-keyword">AS</span>
+<span class="hljs-keyword">RETURN</span>
+	<span class="hljs-keyword">SELECT</span> * <span class="hljs-keyword">FROM</span> StockHistory
+	<span class="hljs-keyword">WHERE</span> Symbol = @symbol
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">FUNCTION</span> HasUser(
+	@userID <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">11</span>)
+)
+<span class="hljs-keyword">RETURNS</span> <span class="hljs-built_in">BIT</span>
+<span class="hljs-keyword">AS</span>
+<span class="hljs-keyword">BEGIN</span>
+	<span class="hljs-keyword">IF</span> <span class="hljs-keyword">EXISTS</span>( <span class="hljs-keyword">SELECT</span> * <span class="hljs-keyword">FROM</span> RegisteredUsers <span class="hljs-keyword">WHERE</span> UserID = @userID)
+		<span class="hljs-keyword">RETURN</span> <span class="hljs-number">1</span>
+	<span class="hljs-keyword">RETURN</span> <span class="hljs-number">0</span>
+<span class="hljs-keyword">END</span>
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">FUNCTION</span> CheckPesel(
+	@pesel <span class="hljs-keyword">nvarchar</span>(<span class="hljs-number">11</span>)
+)
+<span class="hljs-keyword">RETURNS</span> <span class="hljs-built_in">bit</span>
+<span class="hljs-keyword">AS</span>
+<span class="hljs-keyword">BEGIN</span>
+	<span class="hljs-keyword">DECLARE</span> @return_bit <span class="hljs-keyword">AS</span> <span class="hljs-built_in">bit</span>
+	<span class="hljs-comment">--DECLARE @digit AS int</span>
+	<span class="hljs-keyword">DECLARE</span> @control_sum <span class="hljs-keyword">AS</span> <span class="hljs-built_in">int</span>
+	<span class="hljs-keyword">SET</span> @control_sum = <span class="hljs-number">0</span>
+
+	<span class="hljs-keyword">SET</span> @control_sum = @control_sum + (<span class="hljs-keyword">SUBSTRING</span>(@pesel, <span class="hljs-number">1</span>, <span class="hljs-number">1</span>)*<span class="hljs-number">1</span>)
+	<span class="hljs-keyword">SET</span> @control_sum = @control_sum + (<span class="hljs-keyword">SUBSTRING</span>(@pesel, <span class="hljs-number">2</span>, <span class="hljs-number">1</span>)*<span class="hljs-number">3</span>)
+	<span class="hljs-keyword">SET</span> @control_sum = @control_sum + (<span class="hljs-keyword">SUBSTRING</span>(@pesel, <span class="hljs-number">3</span>, <span class="hljs-number">1</span>)*<span class="hljs-number">7</span>)
+	<span class="hljs-keyword">SET</span> @control_sum = @control_sum + (<span class="hljs-keyword">SUBSTRING</span>(@pesel, <span class="hljs-number">4</span>, <span class="hljs-number">1</span>)*<span class="hljs-number">9</span>)
+	<span class="hljs-keyword">SET</span> @control_sum = @control_sum + (<span class="hljs-keyword">SUBSTRING</span>(@pesel, <span class="hljs-number">5</span>, <span class="hljs-number">1</span>)*<span class="hljs-number">1</span>)
+	<span class="hljs-keyword">SET</span> @control_sum = @control_sum + (<span class="hljs-keyword">SUBSTRING</span>(@pesel, <span class="hljs-number">6</span>, <span class="hljs-number">1</span>)*<span class="hljs-number">3</span>)
+	<span class="hljs-keyword">SET</span> @control_sum = @control_sum + (<span class="hljs-keyword">SUBSTRING</span>(@pesel, <span class="hljs-number">7</span>, <span class="hljs-number">1</span>)*<span class="hljs-number">7</span>)
+	<span class="hljs-keyword">SET</span> @control_sum = @control_sum + (<span class="hljs-keyword">SUBSTRING</span>(@pesel, <span class="hljs-number">8</span>, <span class="hljs-number">1</span>)*<span class="hljs-number">9</span>)
+	<span class="hljs-keyword">SET</span> @control_sum = @control_sum + (<span class="hljs-keyword">SUBSTRING</span>(@pesel, <span class="hljs-number">9</span>, <span class="hljs-number">1</span>)*<span class="hljs-number">1</span>)
+	<span class="hljs-keyword">SET</span> @control_sum = @control_sum + (<span class="hljs-keyword">SUBSTRING</span>(@pesel, <span class="hljs-number">10</span>, <span class="hljs-number">1</span>)*<span class="hljs-number">3</span>)
+
+	<span class="hljs-keyword">IF</span> (<span class="hljs-number">10</span>-(@control_sum % <span class="hljs-number">10</span>)) = <span class="hljs-keyword">SUBSTRING</span>(@pesel, <span class="hljs-number">11</span>, <span class="hljs-number">1</span>)
+		<span class="hljs-keyword">SET</span> @return_bit = <span class="hljs-number">1</span>
+	<span class="hljs-keyword">ELSE</span>
+		<span class="hljs-keyword">SET</span> @return_bit = <span class="hljs-number">0</span>
+
+	<span class="hljs-keyword">RETURN</span> @return_bit
+<span class="hljs-keyword">END</span>
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">FUNCTION</span> CheckPassword(
+	@<span class="hljs-keyword">password</span> <span class="hljs-keyword">nvarchar</span>(<span class="hljs-keyword">MAX</span>)
+)
+<span class="hljs-keyword">RETURNS</span> <span class="hljs-built_in">bit</span>
+<span class="hljs-keyword">AS</span>
+<span class="hljs-keyword">BEGIN</span>
+	<span class="hljs-keyword">DECLARE</span> @return_bit <span class="hljs-keyword">AS</span> <span class="hljs-built_in">bit</span>
+	
+	<span class="hljs-keyword">IF</span> @<span class="hljs-keyword">password</span> <span class="hljs-keyword">like</span> <span class="hljs-string">'%[0-9]%'</span> <span class="hljs-keyword">and</span> @<span class="hljs-keyword">password</span> <span class="hljs-keyword">like</span> <span class="hljs-string">'%[A-Z]%'</span> <span class="hljs-keyword">and</span> @<span class="hljs-keyword">password</span> <span class="hljs-keyword">like</span> <span class="hljs-string">'%[a-z]%'</span> <span class="hljs-keyword">and</span> @<span class="hljs-keyword">password</span> <span class="hljs-keyword">like</span> <span class="hljs-string">'%[!@#$%a^&amp;*()-_+=.,;:"`~]%'</span> <span class="hljs-keyword">and</span> <span class="hljs-keyword">len</span>(@<span class="hljs-keyword">password</span>) &gt;= <span class="hljs-number">8</span> <span class="hljs-comment">--co z '</span>
+		<span class="hljs-keyword">SET</span> @return_bit = <span class="hljs-number">1</span>
+	<span class="hljs-keyword">ELSE</span>
+		<span class="hljs-keyword">SET</span> @return_bit = <span class="hljs-number">0</span>
+
+	<span class="hljs-keyword">RETURN</span> @return_bit
+<span class="hljs-keyword">END</span>
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">FUNCTION</span> ReadSex(
+	@pesel <span class="hljs-keyword">nvarchar</span>(<span class="hljs-number">11</span>)
+)
+<span class="hljs-keyword">RETURNS</span> <span class="hljs-keyword">nvarchar</span>(<span class="hljs-number">1</span>)
+<span class="hljs-keyword">AS</span>
+<span class="hljs-keyword">BEGIN</span>
+	<span class="hljs-keyword">DECLARE</span> @return_sex <span class="hljs-keyword">AS</span> <span class="hljs-keyword">nvarchar</span>(<span class="hljs-number">1</span>)
+
+	<span class="hljs-keyword">DECLARE</span> @sexNumber <span class="hljs-keyword">AS</span> <span class="hljs-built_in">int</span>
+	<span class="hljs-keyword">SET</span> @sexNumber = <span class="hljs-keyword">SUBSTRING</span>(@pesel, <span class="hljs-number">10</span>, <span class="hljs-number">1</span>)
+		
+	<span class="hljs-keyword">IF</span> (@sexNumber % <span class="hljs-number">2</span>) = <span class="hljs-number">0</span>
+		<span class="hljs-keyword">SET</span> @return_sex = <span class="hljs-string">'W'</span>
+	<span class="hljs-keyword">ELSE</span>
+		<span class="hljs-keyword">SET</span> @return_sex = <span class="hljs-string">'M'</span>
+
+	<span class="hljs-keyword">RETURN</span> @return_sex
+<span class="hljs-keyword">END</span>
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">FUNCTION</span> ReadBirthDay(
+	@pesel <span class="hljs-keyword">nvarchar</span>(<span class="hljs-number">11</span>)
+)
+<span class="hljs-keyword">RETURNS</span> <span class="hljs-built_in">date</span>
+<span class="hljs-keyword">AS</span>
+<span class="hljs-keyword">BEGIN</span>
+	<span class="hljs-keyword">DECLARE</span> @return_date <span class="hljs-keyword">AS</span> <span class="hljs-built_in">date</span>
+
+	<span class="hljs-keyword">DECLARE</span> @birthYear <span class="hljs-keyword">AS</span> <span class="hljs-built_in">int</span>
+	<span class="hljs-keyword">SET</span> @birthYear = <span class="hljs-keyword">SUBSTRING</span>(@pesel, <span class="hljs-number">1</span>, <span class="hljs-number">2</span>)
+	<span class="hljs-keyword">DECLARE</span> @birthMounth <span class="hljs-keyword">AS</span> <span class="hljs-built_in">int</span>
+	<span class="hljs-keyword">SET</span> @birthMounth = <span class="hljs-keyword">SUBSTRING</span>(@pesel, <span class="hljs-number">3</span>, <span class="hljs-number">2</span>)
+	<span class="hljs-keyword">DECLARE</span> @birthDay <span class="hljs-keyword">AS</span> <span class="hljs-built_in">int</span>
+	<span class="hljs-keyword">SET</span> @birthDay = <span class="hljs-keyword">SUBSTRING</span>(@pesel, <span class="hljs-number">5</span>, <span class="hljs-number">2</span>)
+
+	<span class="hljs-keyword">IF</span> @birthMounth&gt;<span class="hljs-number">20</span>
+		<span class="hljs-keyword">BEGIN</span>
+			<span class="hljs-keyword">SET</span> @birthMounth = @birthMounth<span class="hljs-number">-20</span>;
+			<span class="hljs-keyword">SET</span> @birthYear = @birthYear+<span class="hljs-number">2000</span>;
+		<span class="hljs-keyword">END</span>
+	<span class="hljs-keyword">ELSE</span>
+		<span class="hljs-keyword">SET</span> @birthYear = @birthYear + <span class="hljs-number">1900</span>
+		
+	<span class="hljs-keyword">SET</span> @return_date = <span class="hljs-keyword">DATEFROMPARTS</span>(@birthYear, @birthMounth, @birthDay)
+
+	<span class="hljs-keyword">RETURN</span> @return_date
+<span class="hljs-keyword">END</span>
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-comment">--Procedury</span>
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">PROCEDURE</span> AddStocksToUser(
+	@userID <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">11</span>),
+	@symbol <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">4</span>),
+	@amount <span class="hljs-built_in">INT</span>
+)
+<span class="hljs-keyword">AS</span>
+<span class="hljs-keyword">BEGIN</span>
+	<span class="hljs-keyword">IF</span> <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> (<span class="hljs-keyword">SELECT</span> * <span class="hljs-keyword">FROM</span> UserStocks <span class="hljs-keyword">WHERE</span> UserID = @userID <span class="hljs-keyword">AND</span> Symbol = @symbol)
+	<span class="hljs-keyword">BEGIN</span>
+		<span class="hljs-keyword">INSERT</span> <span class="hljs-keyword">INTO</span> UserStocks
+		<span class="hljs-keyword">VALUES</span> (@userID, @symbol, @amount)
+	<span class="hljs-keyword">END</span>
+	<span class="hljs-keyword">ELSE</span>
+	<span class="hljs-keyword">BEGIN</span>
+		<span class="hljs-keyword">UPDATE</span> UserStocks
+		<span class="hljs-keyword">SET</span> Amount = Amount + @amount
+		<span class="hljs-keyword">WHERE</span> UserID = @userID <span class="hljs-keyword">AND</span> Symbol = @symbol
+	<span class="hljs-keyword">END</span>
+<span class="hljs-keyword">END</span>
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">PROCEDURE</span> RemoveStocksFromUser(
+	@userID <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">11</span>),
+	@symbol <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">4</span>),
+	@amount <span class="hljs-built_in">INT</span>
+)
+<span class="hljs-keyword">AS</span>
+<span class="hljs-keyword">BEGIN</span>
+	<span class="hljs-keyword">IF</span> <span class="hljs-keyword">EXISTS</span> (<span class="hljs-keyword">SELECT</span> * <span class="hljs-keyword">FROM</span> UserStocks <span class="hljs-keyword">WHERE</span> UserID=@userID <span class="hljs-keyword">AND</span> Symbol=@symbol)
+	<span class="hljs-keyword">BEGIN</span>
+		<span class="hljs-keyword">IF</span> (<span class="hljs-keyword">SELECT</span> Amount <span class="hljs-keyword">FROM</span> UserStocks <span class="hljs-keyword">WHERE</span> UserID=@userID <span class="hljs-keyword">AND</span> Symbol=@symbol) &gt;= @amount
+		<span class="hljs-keyword">BEGIN</span>
+			<span class="hljs-keyword">UPDATE</span> UserStocks
+			<span class="hljs-keyword">SET</span> Amount = Amount - @amount
+			<span class="hljs-keyword">WHERE</span> UserID=@userID <span class="hljs-keyword">AND</span> Symbol=@symbol
+		<span class="hljs-keyword">END</span>
+		<span class="hljs-keyword">ELSE</span>
+			PRINT <span class="hljs-string">'Podany u�ytkownik o ID: '</span> + @userID + <span class="hljs-string">' posiada mniej akcji '</span> + @symbol + <span class="hljs-string">' ni� '</span> + <span class="hljs-keyword">CONVERT</span>(<span class="hljs-built_in">VARCHAR</span>, @amount)
+	<span class="hljs-keyword">END</span>
+	<span class="hljs-keyword">ELSE</span>
+		PRINT <span class="hljs-string">'Podany u�ytkownik o ID: '</span> + @userID + <span class="hljs-string">' nie posiada akcji '</span> + @symbol 
+<span class="hljs-keyword">END</span>
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">PROCEDURE</span> Buy(
+	@buyerID <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">11</span>),
+	@symbol <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">4</span>),
+	@amount <span class="hljs-built_in">INT</span>,
+	@maxPrice MONEY
+)
+<span class="hljs-keyword">AS</span>
+<span class="hljs-keyword">BEGIN</span>
+	<span class="hljs-keyword">DECLARE</span> @moneyToDeposit MONEY
+	<span class="hljs-keyword">SET</span> @moneyToDeposit = @amount * @maxPrice
+
+	<span class="hljs-keyword">IF</span> dbo.hasEnoughMoney(@buyerID, @moneyToDeposit) = <span class="hljs-number">0</span>
+	<span class="hljs-keyword">BEGIN</span>
+		PRINT <span class="hljs-string">'U�ytkownik '</span> + @buyerID + <span class="hljs-string">' nie posiada wystarczaj�cej ilo�ci pieni�dzy by wykona� kupno przy tych danych'</span>
+		<span class="hljs-keyword">RETURN</span>
+	<span class="hljs-keyword">END</span>
+
+	<span class="hljs-keyword">UPDATE</span> <span class="hljs-keyword">Users</span>
+	<span class="hljs-keyword">SET</span> Balance = Balance - @moneyToDeposit
+	<span class="hljs-keyword">WHERE</span> UserID = @buyerID
+
+	<span class="hljs-keyword">DECLARE</span> @sellID <span class="hljs-built_in">INT</span>
+	<span class="hljs-keyword">DECLARE</span> @sellerID <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">11</span>)
+	<span class="hljs-keyword">DECLARE</span> @amountInSell <span class="hljs-built_in">INT</span>
+	<span class="hljs-keyword">DECLARE</span> @sellPrice MONEY
+
+	<span class="hljs-keyword">DECLARE</span> matchingSellOrders <span class="hljs-keyword">CURSOR</span> <span class="hljs-keyword">FOR</span>
+	<span class="hljs-keyword">SELECT</span> OrderID, SellerID, Amount, Price <span class="hljs-keyword">FROM</span> SellOrders 
+	<span class="hljs-keyword">WHERE</span> Symbol=@symbol <span class="hljs-keyword">AND</span> Price &lt;= @maxPrice
+	<span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> Price <span class="hljs-keyword">DESC</span>
+
+	<span class="hljs-keyword">OPEN</span> matchingSellOrders
+
+	<span class="hljs-keyword">FETCH</span> <span class="hljs-keyword">NEXT</span> <span class="hljs-keyword">FROM</span> matchingSellOrders <span class="hljs-keyword">INTO</span> @sellID, @sellerID, @amountInSell, @sellPrice
+
+	<span class="hljs-keyword">WHILE</span> @@FETCH_STATUS = <span class="hljs-number">0</span> <span class="hljs-keyword">AND</span> @amount != <span class="hljs-number">0</span>
+	<span class="hljs-keyword">BEGIN</span>
+		<span class="hljs-keyword">IF</span> @amount &gt; @amountInSell
+		<span class="hljs-keyword">BEGIN</span>
+			<span class="hljs-keyword">INSERT</span> <span class="hljs-keyword">INTO</span> TransactionsHistory
+			<span class="hljs-keyword">VALUES</span> (<span class="hljs-keyword">GETDATE</span>(), @sellerID, @buyerID, @symbol, @amountInSell, @sellPrice, @maxPrice)
+
+			<span class="hljs-keyword">SET</span> @amount = @amount - @amountInSell
+			<span class="hljs-keyword">SET</span> @amountInSell = <span class="hljs-number">0</span>
+		<span class="hljs-keyword">END</span>
+		<span class="hljs-keyword">ELSE</span> <span class="hljs-keyword">IF</span> @amount &lt; @amountInSell
+		<span class="hljs-keyword">BEGIN</span>
+			<span class="hljs-keyword">INSERT</span> <span class="hljs-keyword">INTO</span> TransactionsHistory
+			<span class="hljs-keyword">VALUES</span> (<span class="hljs-keyword">GETDATE</span>(), @sellerID, @buyerID, @symbol, @amount, @sellPrice, @maxPrice)
+
+			<span class="hljs-keyword">SET</span> @amountInSell = @amountInSell - @amount
+			<span class="hljs-keyword">SET</span> @amount = <span class="hljs-number">0</span>
+		<span class="hljs-keyword">END</span>
+		<span class="hljs-keyword">ELSE</span>
+		<span class="hljs-keyword">BEGIN</span>
+			<span class="hljs-keyword">INSERT</span> <span class="hljs-keyword">INTO</span> TransactionsHistory
+			<span class="hljs-keyword">VALUES</span> (<span class="hljs-keyword">GETDATE</span>(), @sellerID, @buyerID, @symbol, @amount, @sellPrice, @maxPrice)
+			
+			<span class="hljs-keyword">SET</span> @amount = <span class="hljs-number">0</span>
+			<span class="hljs-keyword">SET</span> @amountInSell = <span class="hljs-number">0</span>
+		<span class="hljs-keyword">END</span>
+
+		<span class="hljs-keyword">UPDATE</span> SellOrders
+		<span class="hljs-keyword">SET</span> Amount = @amountInSell
+		<span class="hljs-keyword">WHERE</span> OrderID = @sellID
+
+		<span class="hljs-keyword">FETCH</span> <span class="hljs-keyword">NEXT</span> <span class="hljs-keyword">FROM</span> matchingSellOrders <span class="hljs-keyword">INTO</span> @sellID, @sellerID, @amountInSell, @sellPrice
+	<span class="hljs-keyword">END</span>
+	
+	<span class="hljs-keyword">CLOSE</span> matchingSellOrders
+	<span class="hljs-keyword">DEALLOCATE</span> matchingSellOrders
+
+	<span class="hljs-keyword">IF</span> @amount != <span class="hljs-number">0</span>
+	<span class="hljs-keyword">BEGIN</span>
+		<span class="hljs-keyword">INSERT</span> <span class="hljs-keyword">INTO</span> BuyOrders
+		<span class="hljs-keyword">VALUES</span> (@buyerID, @symbol, @amount, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>, @maxPrice)
+	<span class="hljs-keyword">END</span>
+<span class="hljs-keyword">END</span>
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">PROCEDURE</span> Sell(
+	@sellerID <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">11</span>),
+	@symbol <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">4</span>),
+	@amount <span class="hljs-built_in">INT</span>,
+	@sellPrice MONEY
+)
+<span class="hljs-keyword">AS</span>
+<span class="hljs-keyword">BEGIN</span>
+	<span class="hljs-keyword">IF</span> dbo.hasEnoughStockActions(@sellerID, @symbol, @amount) = <span class="hljs-number">0</span>
+	<span class="hljs-keyword">BEGIN</span>
+		PRINT <span class="hljs-string">'U�ytkownik '</span> + @sellerID + <span class="hljs-string">' nie posiada wystarczaj�cej ilo�ci akcji '</span> + @symbol 
+		<span class="hljs-keyword">RETURN</span>
+	<span class="hljs-keyword">END</span>
+	<span class="hljs-keyword">ELSE</span>
+	<span class="hljs-keyword">BEGIN</span>
+		<span class="hljs-keyword">UPDATE</span> UserStocks
+		<span class="hljs-keyword">SET</span> Amount = Amount - @amount
+		<span class="hljs-keyword">WHERE</span> UserID=@sellerID <span class="hljs-keyword">AND</span> Symbol=@symbol
+	<span class="hljs-keyword">END</span>
+
+	<span class="hljs-keyword">DECLARE</span> @buyID <span class="hljs-built_in">INT</span>
+	<span class="hljs-keyword">DECLARE</span> @buyerID <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">11</span>)
+	<span class="hljs-keyword">DECLARE</span> @amountInBuy <span class="hljs-built_in">INT</span>
+	<span class="hljs-keyword">DECLARE</span> @buyerMaxPrice MONEY
+
+	<span class="hljs-keyword">DECLARE</span> matchingBuyOrders <span class="hljs-keyword">CURSOR</span> <span class="hljs-keyword">FOR</span>
+	<span class="hljs-keyword">SELECT</span> OrderID, BuyerID, Amount, MaxPrice <span class="hljs-keyword">FROM</span> BuyOrders 
+	<span class="hljs-keyword">WHERE</span> Symbol=@symbol <span class="hljs-keyword">AND</span> @sellPrice &lt;= MaxPrice
+
+	<span class="hljs-keyword">OPEN</span> matchingBuyOrders
+
+	<span class="hljs-keyword">FETCH</span> <span class="hljs-keyword">NEXT</span> <span class="hljs-keyword">FROM</span> matchingBuyOrders <span class="hljs-keyword">INTO</span> @buyID, @buyerID, @amountInBuy, @buyerMaxPrice
+
+	<span class="hljs-keyword">WHILE</span> @@FETCH_STATUS = <span class="hljs-number">0</span> <span class="hljs-keyword">AND</span> @amount != <span class="hljs-number">0</span>
+	<span class="hljs-keyword">BEGIN</span>
+		<span class="hljs-keyword">IF</span> @amount &gt; @amountInBuy
+		<span class="hljs-keyword">BEGIN</span>
+			<span class="hljs-keyword">INSERT</span> <span class="hljs-keyword">INTO</span> TransactionsHistory
+			<span class="hljs-keyword">VALUES</span> (<span class="hljs-keyword">GETDATE</span>(), @sellerID, @buyerID, @symbol, @amountInBuy, @sellPrice, @buyerMaxPrice)
+
+			<span class="hljs-keyword">SET</span> @amount = @amount - @amountInBuy
+			<span class="hljs-keyword">SET</span> @amountInBuy = <span class="hljs-number">0</span>
+		<span class="hljs-keyword">END</span>
+		<span class="hljs-keyword">ELSE</span> <span class="hljs-keyword">IF</span> @amount &lt; @amountInBuy
+		<span class="hljs-keyword">BEGIN</span>
+			<span class="hljs-keyword">INSERT</span> <span class="hljs-keyword">INTO</span> TransactionsHistory
+			<span class="hljs-keyword">VALUES</span> (<span class="hljs-keyword">GETDATE</span>(), @sellerID, @buyerID, @symbol, @amount, @sellPrice, @buyerMaxPrice)
+
+			<span class="hljs-keyword">SET</span> @amountInBuy = @amountInBuy - @amount
+			<span class="hljs-keyword">SET</span> @amount = <span class="hljs-number">0</span>
+		<span class="hljs-keyword">END</span>
+		<span class="hljs-keyword">ELSE</span>
+		<span class="hljs-keyword">BEGIN</span>
+			<span class="hljs-keyword">INSERT</span> <span class="hljs-keyword">INTO</span> TransactionsHistory
+			<span class="hljs-keyword">VALUES</span> (<span class="hljs-keyword">GETDATE</span>(), @sellerID, @buyerID, @symbol, @amount, @sellPrice, @buyerMaxPrice)
+			
+			<span class="hljs-keyword">SET</span> @amount = <span class="hljs-number">0</span>
+			<span class="hljs-keyword">SET</span> @amountInBuy = <span class="hljs-number">0</span>
+		<span class="hljs-keyword">END</span>
+
+		<span class="hljs-keyword">UPDATE</span> BuyOrders
+		<span class="hljs-keyword">SET</span> Amount = @amountInBuy
+		<span class="hljs-keyword">WHERE</span> OrderID = @buyID
+
+		<span class="hljs-keyword">FETCH</span> <span class="hljs-keyword">NEXT</span> <span class="hljs-keyword">FROM</span> matchingBuyOrders <span class="hljs-keyword">INTO</span> @buyID, @buyerID, @amountInBuy, @buyerMaxPrice
+	<span class="hljs-keyword">END</span>
+	
+	<span class="hljs-keyword">CLOSE</span> matchingBuyOrders
+	<span class="hljs-keyword">DEALLOCATE</span> matchingBuyOrders
+
+	<span class="hljs-keyword">IF</span> @amount != <span class="hljs-number">0</span>
+	<span class="hljs-keyword">BEGIN</span>
+		<span class="hljs-keyword">INSERT</span> <span class="hljs-keyword">INTO</span> SellOrders
+		<span class="hljs-keyword">VALUES</span> (@sellerID, @symbol, @amount, @sellPrice)
+	<span class="hljs-keyword">END</span>
+<span class="hljs-keyword">END</span>
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">PROCEDURE</span> DepositMoney(
+	@userID <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">11</span>),
+	@money MONEY
+)
+<span class="hljs-keyword">AS</span>
+<span class="hljs-keyword">BEGIN</span>
+	<span class="hljs-keyword">IF</span> dbo.HasUser(@userID) = <span class="hljs-number">0</span>
+		PRINT <span class="hljs-string">'Nie istnieje taki u�ytkownik'</span>
+	<span class="hljs-keyword">ELSE</span>
+	<span class="hljs-keyword">BEGIN</span>
+		<span class="hljs-keyword">UPDATE</span> <span class="hljs-keyword">Users</span>
+		<span class="hljs-keyword">SET</span> Balance = Balance + @money
+		<span class="hljs-keyword">WHERE</span> UserID = @userID
+	<span class="hljs-keyword">END</span>
+<span class="hljs-keyword">END</span>
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">PROCEDURE</span> RegisterUser(
+	@pesel <span class="hljs-keyword">nvarchar</span>(<span class="hljs-number">11</span>), @<span class="hljs-keyword">password</span> <span class="hljs-keyword">nvarchar</span>(<span class="hljs-keyword">MAX</span>)
+)
+<span class="hljs-keyword">AS</span>
+<span class="hljs-keyword">BEGIN</span>
+	<span class="hljs-keyword">IF</span> dbo.CheckPesel(@pesel) = <span class="hljs-number">1</span> <span class="hljs-keyword">and</span> dbo.CheckPassword(@<span class="hljs-keyword">password</span>) = <span class="hljs-number">1</span>
+	<span class="hljs-keyword">BEGIN</span>
+		<span class="hljs-keyword">INSERT</span> <span class="hljs-keyword">INTO</span> <span class="hljs-keyword">Users</span> (UserID, Balance, Sex, BirthDay)
+		<span class="hljs-keyword">VALUES</span> (@pesel, <span class="hljs-number">0</span>, dbo.ReadSex(@pesel), dbo.ReadBirthDay(@pesel))
+	
+		<span class="hljs-keyword">INSERT</span> <span class="hljs-keyword">INTO</span> RegisteredUsers(UserID, <span class="hljs-keyword">Password</span>)
+		<span class="hljs-keyword">VALUES</span> (@pesel, @<span class="hljs-keyword">password</span>)
+	<span class="hljs-keyword">END</span>
+	<span class="hljs-keyword">ELSE</span>
+		PRINT <span class="hljs-string">'Cos nie tak z danymi'</span>
+<span class="hljs-keyword">END</span>
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">PROCEDURE</span> DeleteUser(
+	@pesel <span class="hljs-keyword">nvarchar</span>(<span class="hljs-number">11</span>)
+)
+<span class="hljs-keyword">AS</span>
+<span class="hljs-keyword">BEGIN</span>
+	<span class="hljs-keyword">IF</span> dbo.HasUser(@pesel) = <span class="hljs-number">1</span>
+		<span class="hljs-keyword">DELETE</span> <span class="hljs-keyword">FROM</span> RegisteredUsers
+		<span class="hljs-keyword">WHERE</span> UserID = @pesel
+	<span class="hljs-keyword">ELSE</span>
+		PRINT <span class="hljs-string">'Podany u�ytkownik nie jest zarejestrowany wi�c nie mog� go usun��'</span>
+<span class="hljs-keyword">END</span>
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-comment">--TWORZENIE TRIGGERÓW</span>
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TRIGGER</span> ReturnRestFromDepositedMoney
+<span class="hljs-keyword">ON</span> TransactionsHistory
+<span class="hljs-keyword">AFTER</span> <span class="hljs-keyword">INSERT</span>
+<span class="hljs-keyword">AS</span>
+<span class="hljs-keyword">BEGIN</span>
+	<span class="hljs-keyword">DECLARE</span> @buyerID <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">11</span>), @amount <span class="hljs-built_in">INT</span>, @sellPrice MONEY, @buyerMaxPrice MONEY
+
+	<span class="hljs-keyword">SELECT</span> @buyerID = BuyerID, @amount = Amount,
+		@sellPrice = SellPrice, @buyerMaxPrice = BuyerMaxPrice
+	<span class="hljs-keyword">FROM</span> inserted
+
+	<span class="hljs-keyword">UPDATE</span> <span class="hljs-keyword">Users</span>
+	<span class="hljs-keyword">SET</span> Balance = Balance + (@amount * (@buyerMaxPrice-@sellPrice))
+	<span class="hljs-keyword">WHERE</span> UserID = @buyerID
+<span class="hljs-keyword">END</span>
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TRIGGER</span> TransferSaleMoney
+<span class="hljs-keyword">ON</span> TransactionsHistory
+<span class="hljs-keyword">AFTER</span> <span class="hljs-keyword">INSERT</span>
+<span class="hljs-keyword">AS</span>
+<span class="hljs-keyword">BEGIN</span>
+	<span class="hljs-keyword">DECLARE</span> @sellerID <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">11</span>), @amount <span class="hljs-built_in">INT</span>, @sellPrice MONEY
+
+	<span class="hljs-keyword">SELECT</span> @sellerID = SellerID, @amount = Amount, @sellPrice = SellPrice
+	<span class="hljs-keyword">FROM</span> inserted
+
+	<span class="hljs-keyword">UPDATE</span> <span class="hljs-keyword">Users</span>
+	<span class="hljs-keyword">SET</span> Balance = Balance + (@amount * @sellPrice)
+	<span class="hljs-keyword">WHERE</span> UserID = @sellerID
+<span class="hljs-keyword">END</span>
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TRIGGER</span> UpdateStockHistory
+<span class="hljs-keyword">ON</span> TransactionsHistory
+<span class="hljs-keyword">AFTER</span> <span class="hljs-keyword">INSERT</span>
+<span class="hljs-keyword">AS</span>
+<span class="hljs-keyword">BEGIN</span>
+	<span class="hljs-keyword">DECLARE</span> @<span class="hljs-built_in">date</span> <span class="hljs-built_in">DATE</span>, @symbol <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">4</span>), @sellPrice MONEY
+
+	<span class="hljs-keyword">SELECT</span> @<span class="hljs-built_in">date</span> = [<span class="hljs-built_in">Date</span>], @symbol = Symbol, @sellPrice = SellPrice <span class="hljs-keyword">FROM</span> inserted
+
+	<span class="hljs-keyword">IF</span> <span class="hljs-keyword">EXISTS</span>( <span class="hljs-keyword">SELECT</span> * <span class="hljs-keyword">FROM</span> StockHistory <span class="hljs-keyword">WHERE</span> [<span class="hljs-built_in">Date</span>] = @<span class="hljs-built_in">date</span> <span class="hljs-keyword">AND</span> Symbol = @symbol )
+	<span class="hljs-keyword">BEGIN</span>
+		<span class="hljs-keyword">DECLARE</span> @<span class="hljs-keyword">low</span> MONEY, @<span class="hljs-keyword">high</span> MONEY
+
+		<span class="hljs-keyword">SELECT</span> @<span class="hljs-keyword">low</span> = [<span class="hljs-keyword">Low</span>], @<span class="hljs-keyword">high</span> = [<span class="hljs-keyword">High</span>] <span class="hljs-keyword">FROM</span> StockHistory
+		<span class="hljs-keyword">WHERE</span> [<span class="hljs-built_in">Date</span>] = @<span class="hljs-built_in">date</span> <span class="hljs-keyword">AND</span> Symbol = @symbol
+		
+		<span class="hljs-keyword">IF</span> @<span class="hljs-keyword">low</span> &gt; @sellPrice
+			<span class="hljs-keyword">SET</span> @<span class="hljs-keyword">low</span> = @sellPrice
+
+		<span class="hljs-keyword">IF</span> @<span class="hljs-keyword">high</span> &lt; @sellPrice
+			<span class="hljs-keyword">SET</span> @<span class="hljs-keyword">high</span> = @sellPrice
+
+		<span class="hljs-keyword">UPDATE</span> StockHistory
+		<span class="hljs-keyword">SET</span> [<span class="hljs-keyword">Low</span>] = @<span class="hljs-keyword">low</span>, [<span class="hljs-keyword">High</span>] = @<span class="hljs-keyword">high</span>, Volume = Volume + <span class="hljs-number">1</span>
+		<span class="hljs-keyword">WHERE</span> [<span class="hljs-built_in">Date</span>] = @<span class="hljs-built_in">date</span> <span class="hljs-keyword">AND</span> Symbol = @symbol
+	<span class="hljs-keyword">END</span>
+	<span class="hljs-keyword">ELSE</span>
+	<span class="hljs-keyword">BEGIN</span>
+		<span class="hljs-keyword">INSERT</span> <span class="hljs-keyword">INTO</span> StockHistory
+		<span class="hljs-keyword">VALUES</span> (@<span class="hljs-built_in">date</span>, @symbol, @sellPrice, @sellPrice, <span class="hljs-number">1</span>)
+	<span class="hljs-keyword">END</span>
+<span class="hljs-keyword">END</span>
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TRIGGER</span> TransferSymbols
+<span class="hljs-keyword">ON</span> TransactionsHistory
+<span class="hljs-keyword">AFTER</span> <span class="hljs-keyword">INSERT</span>
+<span class="hljs-keyword">AS</span>
+<span class="hljs-keyword">BEGIN</span>
+	<span class="hljs-keyword">DECLARE</span> @buyerID <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">11</span>), @symbol <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">4</span>), @amount <span class="hljs-built_in">INT</span>
+
+	<span class="hljs-keyword">SELECT</span> @buyerID = BuyerID, @symbol = Symbol, @amount = Amount
+	<span class="hljs-keyword">FROM</span> inserted
+
+	<span class="hljs-keyword">EXECUTE</span> dbo.addStocksToUser @buyerID, @symbol, @amount
+<span class="hljs-keyword">END</span>
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TRIGGER</span> MigrateRegisteredUserToDeletedUser
+<span class="hljs-keyword">ON</span> RegisteredUsers
+<span class="hljs-keyword">FOR</span> <span class="hljs-keyword">DELETE</span>
+<span class="hljs-keyword">AS</span>
+<span class="hljs-keyword">BEGIN</span>
+	<span class="hljs-keyword">DECLARE</span> @userID <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">11</span>)
+
+	<span class="hljs-keyword">SELECT</span> @userID = UserID <span class="hljs-keyword">FROM</span> deleted
+
+	<span class="hljs-keyword">INSERT</span> <span class="hljs-keyword">INTO</span> DeletedUsers
+	<span class="hljs-keyword">VALUES</span>(@userID, <span class="hljs-keyword">GETDATE</span>())
+<span class="hljs-keyword">END</span>
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TRIGGER</span> DeleteEmptyUserStock
+<span class="hljs-keyword">ON</span> UserStocks
+<span class="hljs-keyword">FOR</span> <span class="hljs-keyword">UPDATE</span>
+<span class="hljs-keyword">AS</span>
+<span class="hljs-keyword">BEGIN</span>
+	<span class="hljs-keyword">DECLARE</span> @userID <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">11</span>), @symbol <span class="hljs-keyword">NVARCHAR</span>(<span class="hljs-number">4</span>), @amount <span class="hljs-built_in">INT</span>
+
+	<span class="hljs-keyword">SELECT</span> @userID = UserID, @symbol = Symbol, @amount = Amount <span class="hljs-keyword">FROM</span> inserted
+
+	<span class="hljs-keyword">IF</span> @amount = <span class="hljs-number">0</span>
+		<span class="hljs-keyword">DELETE</span> <span class="hljs-keyword">FROM</span> UserStocks
+		<span class="hljs-keyword">WHERE</span> UserID = @userID <span class="hljs-keyword">AND</span> Symbol = @symbol
+<span class="hljs-keyword">END</span>
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TRIGGER</span> DeleteEmptyBuyOrder
+<span class="hljs-keyword">ON</span> BuyOrders
+<span class="hljs-keyword">FOR</span> <span class="hljs-keyword">UPDATE</span>
+<span class="hljs-keyword">AS</span>
+<span class="hljs-keyword">BEGIN</span>
+	<span class="hljs-keyword">DECLARE</span> @buyID <span class="hljs-built_in">INT</span>, @amount <span class="hljs-built_in">INT</span>
+
+	<span class="hljs-keyword">SELECT</span> @buyID = OrderID, @amount = Amount <span class="hljs-keyword">FROM</span> inserted
+
+	<span class="hljs-keyword">IF</span> @amount = <span class="hljs-number">0</span>
+		<span class="hljs-keyword">DELETE</span> <span class="hljs-keyword">FROM</span> BuyOrders
+		<span class="hljs-keyword">WHERE</span> OrderID = @buyID
+<span class="hljs-keyword">END</span>
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TRIGGER</span> DeleteEmptySellOrder
+<span class="hljs-keyword">ON</span> SellOrders
+<span class="hljs-keyword">FOR</span> <span class="hljs-keyword">UPDATE</span>
+<span class="hljs-keyword">AS</span>
+<span class="hljs-keyword">BEGIN</span>
+	<span class="hljs-keyword">DECLARE</span> @sellID <span class="hljs-built_in">INT</span>, @amount <span class="hljs-built_in">INT</span>
+
+	<span class="hljs-keyword">SELECT</span> @sellID = OrderID, @amount = Amount <span class="hljs-keyword">FROM</span> inserted
+
+	<span class="hljs-keyword">IF</span> @amount = <span class="hljs-number">0</span>
+		<span class="hljs-keyword">DELETE</span> <span class="hljs-keyword">FROM</span> SellOrders
+		<span class="hljs-keyword">WHERE</span> OrderID = @sellID
+<span class="hljs-keyword">END</span>
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-keyword">INSERT</span> <span class="hljs-keyword">INTO</span> Symbols
+<span class="hljs-keyword">VALUES</span> (<span class="hljs-string">'ATNF'</span>), (<span class="hljs-string">'SPY'</span>), (<span class="hljs-string">'FUTU'</span>), (<span class="hljs-string">'GLD'</span>), (<span class="hljs-string">'MRK'</span>)
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> dbo.yahoo_prices_volumes_for_MSSQLTips_nvarchar(
+   [<span class="hljs-built_in">Date</span>] <span class="hljs-built_in">date</span>,
+   [Symbol] <span class="hljs-keyword">nvarchar</span>(<span class="hljs-number">10</span>),
+   [<span class="hljs-keyword">Open</span>] <span class="hljs-keyword">nvarchar</span>(<span class="hljs-number">50</span>) <span class="hljs-literal">NULL</span>,
+   [<span class="hljs-keyword">High</span>] <span class="hljs-keyword">nvarchar</span>(<span class="hljs-number">50</span>) <span class="hljs-literal">NULL</span>,
+   [<span class="hljs-keyword">Low</span>] <span class="hljs-keyword">nvarchar</span>(<span class="hljs-number">50</span>) <span class="hljs-literal">NULL</span>,
+   [<span class="hljs-keyword">Close</span>] <span class="hljs-keyword">nvarchar</span>(<span class="hljs-number">50</span>) <span class="hljs-literal">NULL</span>,
+   [Volume] <span class="hljs-keyword">nvarchar</span>(<span class="hljs-number">50</span>) <span class="hljs-literal">NULL</span>
+) 
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-keyword">truncate</span> <span class="hljs-keyword">table</span> dbo.yahoo_prices_volumes_for_MSSQLTips_nvarchar
+<span class="hljs-keyword">bulk</span> <span class="hljs-keyword">insert</span> dbo.yahoo_prices_volumes_for_MSSQLTips_nvarchar
+<span class="hljs-keyword">from</span> <span class="hljs-string">'C:\Studia\Bazy danych\Projekt\Stock-Market-Simulator\yahoo_prices_volumes_for_ExchangeSymbols_from_01012022_291222.csv'</span>
+<span class="hljs-keyword">with</span>
+(
+    firstrow = <span class="hljs-number">2</span>,
+    fieldterminator = <span class="hljs-string">','</span>,  <span class="hljs-comment">--CSV field delimiter</span>
+    rowterminator = <span class="hljs-string">'\n'</span>
+)
+<span class="hljs-keyword">GO</span>
+
+<span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> StockHistory
+<span class="hljs-keyword">select</span> 
+   [<span class="hljs-built_in">Date</span>],
+   [Symbol],
+   [<span class="hljs-keyword">High</span>],
+   [<span class="hljs-keyword">Low</span>],
+   <span class="hljs-keyword">cast</span>([Volume] <span class="hljs-keyword">as</span> <span class="hljs-built_in">float</span>) 
+<span class="hljs-keyword">from</span> dbo.yahoo_prices_volumes_for_MSSQLTips_nvarchar
+
+<span class="hljs-keyword">DROP</span> <span class="hljs-keyword">TABLE</span> yahoo_prices_volumes_for_MSSQLTips_nvarchar
+</div></code></pre>
+<h1 id="typowe-zapytania">Typowe zapytania:</h1>
+<ul>
+<li>Zobaczenie portfela danego użytkownika</li>
+<li>Zobaczenia histori danej akcji</li>
+<li>Zobaczenie notowań z konkretnego dnia</li>
 </ul>
 
 </body>
